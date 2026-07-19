@@ -1455,8 +1455,9 @@ const App = {
                 </span>
               `).join('')}
             </div>
-            <div class="text-xs mt-2" style="color:var(--text-muted);line-height:1.6">
-              ${this._cypExplanation(Object.keys(phenotypes))}
+            <div class="text-xs mt-2" style="color:var(--text-muted);line-height:1.5">
+              Diese Enzyme in Ihrer Leber bauen Medikamente ab. Je nach Genvariante arbeiten sie normal, verlangsamt oder beschleunigt.
+              Das beeinflusst, wie stark und wie lange ein Medikament bei Ihnen wirkt.
             </div>
           </div>
         ` : '<div class="text-xs" style="color:var(--text-muted);padding:8px 0">Keine CYP-Gen-Daten in Ihrer DNA-Datei gefunden.</div>'}
@@ -1536,12 +1537,15 @@ const App = {
     // Clean up recommendation text - remove technical prefixes
     let cleanRec = rec
       .replace(/^🟡 |^🔴 |^⛔ |^ℹ️ /, '')
-      .replace(/^ALTERNATIVE:\s*/, '')
+      .replace(/^ALTERNATIVE:\s*/i, '')
       .replace(/^DOSISANPASSUNG:\s*/i, '')
       .replace(/^KONTRAINDIZIERT:\s*/i, '')
       .replace(/^VORSICHT:\s*/i, '')
       .replace(/^INFO:\s*/i, '')
+      .replace(/^Beobachtung:\s*/i, '')
       .trim();
+
+    let plainRec = this._translateDrugRec(drug, pheno, cleanRec);
 
     // Detailed explanation based on severity + gene
     let explanation = '';
@@ -1571,9 +1575,94 @@ const App = {
         </div>
         <div class="text-xs" style="color:var(--text-muted);margin-top:2px">Betroffenes Enzym: ${gene} · Ihr Profil: ${this._translatePhenotype(pheno)}</div>
         <div class="drug-warning-desc" style="margin-top:8px;line-height:1.6">${explanation || 'Dieses Medikament wird anders verarbeitet als beim Durchschnitt.'}</div>
-        ${cleanRec ? `<div class="drug-warning-desc" style="margin-top:6px;padding:8px;background:var(--bg-tertiary);border-radius:4px">💡 <strong>Empfehlung:</strong> ${cleanRec}</div>` : ''}
+        ${plainRec ? `<div class="drug-warning-desc" style="margin-top:6px;padding:8px;background:var(--bg-tertiary);border-radius:4px">💡 <strong>Empfehlung für Ihren Arzt:</strong> ${plainRec}</div>` : ''}
       </div>
     `;
+  },
+
+  _translateDrugRec(drug, pheno, rec) {
+    if (!rec) return '';
+
+    const isSlow = pheno.includes('langsam') || pheno.includes('intermediaer');
+    const isFast = pheno.includes('schnell');
+
+    // Drug-specific plain-language translations
+    const drugTranslations = {
+      'Codein': isSlow
+        ? 'Codein wird bei Ihnen nicht in das wirksame Morphium umgewandelt. Es wirkt daher nicht als Schmerzmittel. Ihr Arzt sollte auf ein anderes Schmerzmittel ausweichen (z.B. Morphin, Ibuprofen, Paracetamol).'
+        : 'Codein wird bei Ihnen stärker als üblich in Morphium umgewandelt. Es besteht Überdosierungs-Risiko. Ihr Arzt sollte die niedrigste mögliche Dosis wählen.',
+      'Tramadol': isSlow
+        ? 'Tramadol wird bei Ihnen nicht ausreichend aktiviert und wirkt daher kaum. Ihr Arzt sollte ein alternatives Schmerzmittel wählen.'
+        : 'Tramadol wirkt bei Ihnen stärker als üblich. Ihr Arzt sollte die Dosis reduzieren.',
+      'Tamoxifen': isSlow
+        ? 'Tamoxifen wird bei Ihnen nicht ausreichend in die aktive Form (Endoxifen) umgewandelt. Die Wirkung bei Brustkrebs ist stark vermindert. Ihr Arzt sollte eine Alternative prüfen (z.B. Aromatasehemmer).'
+        : 'Tamoxifen wird bei Ihnen normal verarbeitet.',
+      'Metoprolol': isSlow
+        ? 'Metoprolol wird langsamer abgebaut und wirkt bei Ihnen stärker. Ihr Arzt sollte die Dosis deutlich reduzieren (z.B. Start mit 2.5 mg/Tag statt 10 mg).'
+        : 'Metoprolol wird bei Ihnen schneller abgebaut und wirkt kürzer. Ihr Arzt kann die Dosis verdoppeln oder auf einen anderen Betablocker ausweichen (z.B. Atenolol).',
+      'Amitriptylin': isSlow
+        ? 'Amitriptylin wird langsamer abgebaut. Ihr Arzt sollte die Startdosis um 50% reduzieren (z.B. 25 mg statt 50 mg) und den Spiegel im Blut kontrollieren.'
+        : 'Amitriptylin wird bei Ihnen schneller abgebaut. Die normale Dosis wirkt möglicherweise nicht ausreichend — Ihr Arzt sollte nach 2 Wochen den Spiegel prüfen.',
+      'Fluoxetin': isSlow
+        ? 'Fluoxetin (Prozac) wird bei Ihnen langsamer abgebaut. Ihr Arzt sollte die Dosis um 50% reduzieren. Zusätzlich ist die Wirkung nach Absetzen länger spürbar (bis zu 6 Tage).'
+        : '',
+      'Paroxetin': isSlow
+        ? 'Paroxetin wird bei Ihnen deutlich langsamer abgebaut. Der Spiegel steigt stark an. Ihr Arzt sollte die Dosis um 50% reduzieren.'
+        : '',
+      'Risperidon': isSlow
+        ? 'Risperidon wird bei Ihnen langsamer abgebaut. Das Risiko für Nebenwirkungen ist erhöht. Ihr Arzt sollte die Dosis um 50% reduzieren.'
+        : '',
+      'Clopidogrel': isSlow
+        ? 'Clopidogrel (Plavix) wird bei Ihnen nicht in die aktive Form umgewandelt. Es verhindert keine Blutgerinnsel — erhöhtes Risiko für Herzinfarkt oder Schlaganfall. Ihr Arzt sollte auf Prasugrel oder Ticagrelor umstellen.'
+        : 'Clopidogrel wird bei Ihnen stärker aktiviert als üblich. Das Blutungsrisiko ist erhöht. Ihr Arzt sollte die niedrigste wirksame Dosis wählen und Sie beobachten.',
+      'Omeprazol': isSlow
+        ? 'Omeprazol wird bei Ihnen 5-7x langsamer abgebaut. Der Wirkstoffspiegel ist massiv erhöht. Ihr Arzt sollte die Dosis halbieren oder auf Pantoprazol umstellen.'
+        : 'Omeprazol wirkt bei Ihnen schwächer als üblich, da es zu schnell abgebaut wird. Ihr Arzt kann die Dosis erhöhen oder einen anderen Magenschutz wählen.',
+      'Pantoprazol': isSlow
+        ? 'Pantoprazol wird bei Ihnen 2-3x langsamer abgebaut. Ihr Arzt sollte die Dosis um etwa 30% reduzieren.'
+        : '',
+      'Citalopram': isSlow
+        ? 'Citalopram wird bei Ihnen langsamer abgebaut. Bei hohen Spiegeln steigt das Risiko für Herzrhythmusstörungen (QT-Verlängerung). Ihr Arzt sollte die Maximaldosis auf 20 mg/Tag begrenzen.'
+        : '',
+      'Warfarin': isSlow
+        ? 'Warfarin wird bei Ihnen langsamer abgebaut — die blutverdünnende Wirkung ist verstärkt. Ihr Arzt sollte die Startdosis um 50% reduzieren (z.B. 2.5 mg statt 5 mg) und den INR-Wert engmaschig kontrollieren.'
+        : '',
+      'Phenprocoumon': isSlow
+        ? 'Phenprocoumon (Marcumar) wird bei Ihnen langsamer abgebaut. Ihr Arzt sollte die Startdosis um 50% reduzieren und den INR-Wert kontrollieren.'
+        : '',
+      'Celecoxib': isSlow
+        ? 'Celecoxib wird bei Ihnen langsamer abgebaut. Ihr Arzt sollte die niedrigste wirksame Dosis wählen (100 mg statt 200 mg).'
+        : '',
+    };
+
+    if (drugTranslations[drug]) return drugTranslations[drug];
+
+    // Fallback: allgemeine verständliche Übersetzung
+    if (rec.includes('KONTRAINDIZIERT') || rec.includes('Alternative')) {
+      return 'Dieses Medikament ist für Ihren Genotyp nicht geeignet. Ihr Arzt sollte eine Alternative wählen.';
+    }
+    if (rec.includes('Dosis um') || rec.includes('Startdosis') || rec.includes('reduzieren') || rec.includes('erhöhen')) {
+      if (isSlow) return 'Das Medikament wird bei Ihnen langsamer abgebaut. Eine niedrigere Dosis kann ausreichen. Ihr Arzt sollte die Dosis anpassen.';
+      if (isFast) return 'Das Medikament wird bei Ihnen schneller abgebaut. Eine höhere Dosis kann nötig sein. Ihr Arzt sollte die Dosis anpassen.';
+    }
+    if (rec.includes('Spiegel') || rec.includes('kontrollieren')) {
+      return 'Ihr Arzt sollte den Medikamentenspiegel im Blut überwachen, um die richtige Dosis für Sie zu finden.';
+    }
+
+    // Clean up remaining technical terms
+    return rec
+      .replace('AUC', 'Wirkstoffspiegel im Blut')
+      .replace('HWZ', 'Halbwertszeit (Wirkdauer)')
+      .replace('PM', 'langsamer Abbau')
+      .replace('IM', 'verlangsamter Abbau')
+      .replace('UM', 'schneller Abbau')
+      .replace('EM', 'normaler Abbau')
+      .replace(/CPIC Level A[!.]*/g, '')
+      .replace(/erwaegen/g, 'in Betracht ziehen')
+      .replace(/ -\d+%/g, m => `. Die Dosis sollte um ${m.slice(2)} reduziert werden`)
+      .replace(/\+(\d+)%/g, (m, pct) => `. Die Dosis sollte um ${pct}% erhöht werden`)
+      .replace(/Morphin/g, 'Morphium')
+      .trim();
   },
 
   /* ================================================================
