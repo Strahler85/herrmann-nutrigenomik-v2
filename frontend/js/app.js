@@ -1633,6 +1633,9 @@ const App = {
       'Celecoxib': isSlow
         ? 'Celecoxib wird bei Ihnen langsamer abgebaut. Ihr Arzt sollte die niedrigste wirksame Dosis wählen (100 mg statt 200 mg).'
         : '',
+      'Koffein': isSlow
+        ? 'Koffein wird bei Ihnen etwa 4x langsamer abgebaut als normal. Eine Tasse Kaffee am Mittag kann noch abends den Schlaf stören. Empfehlung: max. 1-2 Tassen Kaffee pro Tag, keinen Kaffee nach 14 Uhr.'
+        : 'Koffein wird bei Ihnen sehr schnell abgebaut. Sie vertragen Kaffee auch abends gut und können größere Mengen trinken, ohne nervös zu werden.',
     };
 
     if (drugTranslations[drug]) return drugTranslations[drug];
