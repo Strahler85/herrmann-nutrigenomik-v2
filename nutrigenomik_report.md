@@ -1,6 +1,6 @@
 # Nutrigenomik & Supplement Report
 
-**Erstellt**: 19.07.2026 23:51
+**Erstellt**: 19.07.2026 23:56
 **Profil**: 41 Jahre, 111 kg, m
 
 > **Hinweis**: Dieser Report dient zu Bildungszwecken. Er ersetzt keine ärztliche Beratung.
@@ -174,7 +174,7 @@
 | Omega-3 (EPA/DHA) | 2110 mg | Gewicht (111 kg): +1110 mg |
 | Magnesium | 450 mg | MTHFR-Variante: +15 mg; COMT-Variante: +15 mg; SOD2-Variante: +15 mg; Gewicht (111 kg): +150 mg; 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07; Geschlecht (Mann): ×1.15; Auf Tageshoechstdosis (450 mg) begrenzt |
 | Vitamin D3 + K2 | 2419 IE | VDR-Variante: +500 IE; GC-Variante: +500 IE; 🧬 Genetischer Faktor (VDR+GC): ×1.12; 🧬 Genetischer Faktor (VDR+GC): ×1.07 |
-| 5-MTHF (aktives Folat) | 267 ug | 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05 |
+| 5-MTHF (aktives Folat) | 534 ug | MTHFR-Variante: 400 µg 5-MTHF; 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05 |
 | Vitamin B12 (Methylcobalamin) | 834 ug | MTR-Variante: +125 ug; MTRR-Variante: +125 ug; COMT-Variante: +125 ug; 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05 |
 | Zink | 21 mg | SOD2-Variante: +2 mg; GSTP1-Variante: +2 mg; GPX1-Variante: +2 mg; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (GSTP1+GPX1): ×1.05; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07 |
 | Selen | 91 ug | GPX1-Variante: +12 ug; SOD2-Variante: +12 ug; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (GSTP1+GPX1): ×1.05; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07 |

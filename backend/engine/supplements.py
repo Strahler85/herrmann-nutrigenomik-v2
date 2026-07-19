@@ -165,7 +165,7 @@ def _compute_dose(
                 reasons.append(f'{gene}-Variante: +{int(bonus * risk)} {unit}')
     
     # Spezielle MTHFR-Dosierung für Folat
-    if supp['id'] == 'mthfr':
+    if supp['id'] in ('mthfr', 'mthf'):
         mthfr_c677t_risk = 0
         mthfr_a1298c_risk = 0
         for rsid, call in snp_calls_flat.items():
