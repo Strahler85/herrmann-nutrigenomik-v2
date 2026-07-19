@@ -1122,9 +1122,8 @@ const App = {
           <p>3. Blutwert-Anpassung: z.B. Omega-3-Index &lt;8% → ×1.5</p>
           <p>4. Methylierungs-Score: +30% bei Score &gt;5</p>
           <p>5. Medikamenten-Interaktionen: Dosis-Begrenzung bei Kontraindikation</p>
-          <p>6. SNP-Synergien (Epistasis): ×1.0 + (Synergie/20)</p>
-          <p>7. Geschlechtsfaktor: Frauen mehr DHA, Männer mehr EPA</p>
-          <p>8. Altersfaktor: supplement-spezifische Anpassungen</p>
+          <p>6. Geschlechtsfaktor: Frauen mehr DHA, Männer mehr EPA</p>
+          <p>7. Altersfaktor: supplement-spezifische Anpassungen</p>
         </div>
       </div>
     `;
