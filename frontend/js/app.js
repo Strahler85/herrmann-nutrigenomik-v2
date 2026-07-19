@@ -494,6 +494,10 @@ const App = {
           <button class="btn btn-primary" id="btn-save-blood">💾 Speichern & Analysieren</button>
           <button class="btn btn-sm" id="btn-clear-blood">Alle löschen</button>
         </div>
+        <div class="text-xs mt-3" style="color:var(--text-muted);line-height:1.5">
+          ℹ️ Die eingegeben Blutwerte werden gespeichert und fließen in die Supplement-Dosierung ein.
+          Sie dienen der persönlichen Aufklärung und ersetzen keine ärztliche Diagnose.
+        </div>
       </div>
 
       <div id="blood-manual-status"></div>
@@ -966,6 +970,12 @@ const App = {
         ${this._scoreTableHtml(expertScores, {}, {}, 'exp')}
       </div>` : ''}
 
+      <div class="text-xs mt-2" style="color:var(--yellow);padding:10px;border:1px solid rgba(234,179,8,0.3);border-radius:6px;background:var(--yellow-bg);line-height:1.6">
+        ⚠️ <strong>Hinweis:</strong> Ihr genetisches Profil zeigt genetische Veranlagungen, keine Diagnosen.
+        Die Interpretation dient der Aufklärung und ersetzt <strong>keine ärztliche Beratung</strong>.
+        Konsultieren Sie bei gesundheitlichen Fragen immer einen Arzt.
+      </div>
+
       ${results.risk_profile?.interactions?.length > 0 ? `
       <div class="card">
         <div class="card-title">🔄 SNP-Interaktionen (Epistasis)</div>
@@ -1094,6 +1104,12 @@ const App = {
           </div>
         </div>
         <div id="supp-update-status" style="margin-top:8px"></div>
+      </div>
+
+      <div class="text-xs mt-2" style="color:var(--yellow);padding:10px;border:1px solid rgba(234,179,8,0.3);border-radius:6px;background:var(--yellow-bg);line-height:1.6">
+        ⚠️ <strong>Hinweis:</strong> Diese Dosierungsempfehlungen basieren auf Ihren genetischen Daten und wissenschaftlichen Leitlinien.
+        Sie ersetzen <strong>keine ärztliche Beratung</strong>. Besprechen Sie Supplement-Einnahmen immer mit Ihrem Arzt,
+        besonders wenn Sie bereits Medikamente einnehmen.
       </div>
 
       ${high.length > 0 ? `
@@ -1299,6 +1315,9 @@ const App = {
         <div class="text-xs mt-2" style="color:var(--text-muted)">
           Nach dem Speichern werden Supplement-Dosierungen und Verträglichkeits-Warnungen automatisch aktualisiert.
         </div>
+        <div class="text-xs mt-2" style="color:var(--yellow);padding:8px;border:1px solid rgba(234,179,8,0.2);border-radius:4px;background:var(--yellow-bg);line-height:1.6">
+          ⚠️ <strong>Wichtig:</strong> Diese Daten dienen der Aufklärung. Nehmen Sie keine Medikamentenänderungen ohne Rücksprache mit Ihrem Arzt vor.
+        </div>
       </div>
     `;
 
@@ -1452,6 +1471,11 @@ const App = {
             Die Empfehlungen basieren auf den CPIC-Richtlinien (Clinical Pharmacogenetics Implementation Consortium).
           </div>
           ${drugWarnings.map(w => this._drugWarningCard(w)).join('')}
+          <div class="text-xs mt-4" style="color:var(--yellow);padding:10px;border:1px solid rgba(234,179,8,0.3);border-radius:6px;background:var(--yellow-bg);line-height:1.6">
+            ⚠️ <strong>Wichtig:</strong> Diese Informationen dienen der Aufklärung und ersetzen keine ärztliche Beratung.
+            Nehmen Sie keine Dosisanpassungen oder Medikamentenänderungen <strong>ohne Rücksprache mit Ihrem Arzt</strong> vor.
+            Die genetischen Daten geben Hinweise auf mögliche Wechselwirkungen — die klinische Entscheidung trifft immer Ihr behandelnder Arzt.
+          </div>
         ` : `
           <div class="text-xs" style="color:var(--text-muted);padding:12px 0">
             Keine Medikamenten-Warnungen. Fügen Sie Medikamente unter "Medikamente" in Daten hinzu.
