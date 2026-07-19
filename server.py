@@ -314,25 +314,48 @@ def _serialize_scores(category_scores):
     """Convert category scores to JSON-safe format."""
     result = {}
     for cat, data in category_scores.items():
+        snps = []
+        for s in data.get('contributing_snps', []):
+            rsid = s.get('rsid', '')
+            snp_data = {
+                'rsid': rsid,
+                'gene': s.get('gene', ''),
+                'genotype': s.get('normalised', s.get('genotype', '')),
+                'risk_count': s.get('risk_count'),
+                'raw_score': s.get('raw_score'),
+                'effect': s.get('effect_direction', ''),
+                'description': s.get('description', ''),
+                'recommendation': s.get('recommendation', ''),
+            }
+            # Fallback: effect_direction aus dem geladenen SNP-Panel holen
+            if not snp_data['effect'] and rsid:
+                for panel_snp in SNP_PANEL:
+                    if panel_snp.get('rsid') == rsid:
+                        snp_data['effect'] = panel_snp.get('effect_direction', '')
+                        if not snp_data['description']:
+                            snp_data['description'] = panel_snp.get('description', '')
+                        if not snp_data['recommendation']:
+                            snp_data['recommendation'] = panel_snp.get('recommendation', '')
+                        break
+                # Fallback: Expert-Panel durchsuchen
+                if not snp_data['effect'] and EXPERT_PANEL:
+                    for panel_snp in EXPERT_PANEL:
+                        if panel_snp.get('rsid') == rsid:
+                            snp_data['effect'] = panel_snp.get('effect_direction', '')
+                            if not snp_data['description']:
+                                snp_data['description'] = panel_snp.get('description', '')
+                            if not snp_data['recommendation']:
+                                snp_data['recommendation'] = panel_snp.get('recommendation', '')
+                            break
+            snps.append(snp_data)
+
         result[cat] = {
             'score': data.get('score'),
             'category': data.get('category', 'Niedrig'),
             'tested_snps': data.get('tested_snps', 0),
             'missing_snps': data.get('missing_snps', 0),
             'genes': data.get('genes', []),
-            'contributing_snps': [
-                {
-                    'rsid': s.get('rsid'),
-                    'gene': s.get('gene'),
-                    'genotype': s.get('normalised', s.get('genotype', '')),
-                    'risk_count': s.get('risk_count'),
-                    'raw_score': s.get('raw_score'),
-                    'effect': s.get('effect_direction', ''),
-                    'description': s.get('description', ''),
-                    'recommendation': s.get('recommendation', ''),
-                }
-                for s in data.get('contributing_snps', [])
-            ],
+            'contributing_snps': snps,
         }
     return result
 
@@ -341,7 +364,7 @@ def _snp_calls_safe(snp_calls):
     """Strip non-serializable fields from snp_calls."""
     safe = {}
     for rsid, call in snp_calls.items():
-        safe[rsid] = {
+        entry = {
             'rsid': call.get('rsid', rsid),
             'gene': call.get('gene', ''),
             'genotype': call.get('normalised', call.get('genotype', '')),
@@ -351,6 +374,29 @@ def _snp_calls_safe(snp_calls):
             'description': call.get('description', ''),
             'recommendation': call.get('recommendation', ''),
         }
+        # Fallback: Daten aus SNP_PANEL
+        if not entry['effect'] or not entry['description']:
+            for panel_snp in SNP_PANEL:
+                if panel_snp.get('rsid') == rsid:
+                    if not entry['effect']:
+                        entry['effect'] = panel_snp.get('effect_direction', '')
+                    if not entry['description']:
+                        entry['description'] = panel_snp.get('description', '')
+                    if not entry['recommendation']:
+                        entry['recommendation'] = panel_snp.get('recommendation', '')
+                    break
+            # Fallback: Expert-Panel
+            if (not entry['effect'] or not entry['description']) and EXPERT_PANEL:
+                for panel_snp in EXPERT_PANEL:
+                    if panel_snp.get('rsid') == rsid:
+                        if not entry['effect']:
+                            entry['effect'] = panel_snp.get('effect_direction', '')
+                        if not entry['description']:
+                            entry['description'] = panel_snp.get('description', '')
+                        if not entry['recommendation']:
+                            entry['recommendation'] = panel_snp.get('recommendation', '')
+                        break
+        safe[rsid] = entry
     return safe
 
 
