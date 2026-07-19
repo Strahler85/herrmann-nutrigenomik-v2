@@ -902,6 +902,9 @@ const App = {
 
     const rp = results.risk_profile?.category_scores || {};
     const ms = results.methylation_score || {};
+    const standardScores = results.standard_category_scores || {};
+    const expertScores = results.expert_category_scores || {};
+    const hasExpert = Object.keys(expertScores).length > 0;
 
     const categoryExplanations = {
       methylierung: 'MTHFR, COMT, MTR, BHMT — Folat-, B12- und Methylgruppen-Stoffwechsel',
@@ -935,7 +938,7 @@ const App = {
       <div class="card">
         <div class="card-title">🧬 Genetischen Profil</div>
         <div class="card-subtitle">
-          Score ${ms.score != null ? ms.score + '/10' : '—'} · ${ms.level || 'Unbekannt'} · ${results.expert ? 'Expert-Modus (606 SNPs)' : 'Standard (47 SNPs)'}
+          Score ${ms.score != null ? ms.score + '/10' : '—'} · ${ms.level || 'Unbekannt'} · ${hasExpert ? 'Standard (47 SNPs) + Experten (610 SNPs)' : 'Standard (47 SNPs)'}
         </div>
         <div class="text-xs mb-2" style="color:var(--text-muted);padding:8px 0;border-bottom:1px solid var(--border-light)">
           📊 <strong>So lesen Sie die Werte:</strong> Ein Wert von 0–10 zeigt an, wie stark ein Bereich genetisch gefordert ist.
@@ -949,60 +952,19 @@ const App = {
       </div>
 
       <div class="card">
-        <div class="card-title">📊 Kategorien-Scores</div>
+        <div class="card-title">📊 Kategorien-Scores (Standard · 47 SNPs)</div>
         <div class="text-xs mb-3" style="color:var(--text-muted)">
           🟢 ≤3.5 Niedrig · 🟡 3.5–6.5 Moderat · 🔴 ≥6.5 Erhöht
         </div>
-        <table class="score-table">
-          <thead><tr>
-            <th>Kategorie</th>
-            <th>Score</th>
-            <th>Risiko</th>
-            <th>SNPs</th>
-            <th>Gene</th>
-          </tr></thead>
-          <tbody>
-            ${Object.entries(rp)
-              .sort((a, b) => (b[1]?.score || 0) - (a[1]?.score || 0))
-              .map(([cat, data]) => {
-                const catId = 'snp-detail-' + cat.replace(/_/g, '-');
-                const snps = data.contributing_snps || [];
-                return `
-                <tr style="cursor:pointer" onclick="App._toggleSnpDetail('${catId}')">
-                  <td style="font-weight:500">${this._catLabel(cat)}</td>
-                  <td><span class="${this._scoreClass(data.score || 0)}">${data.score != null ? data.score.toFixed(1) : '—'}</span></td>
-                  <td><span class="badge ${data.category === 'Erhöht' ? 'badge-high' : data.category === 'Moderat' ? 'badge-moderate' : 'badge-low'}">${data.category || '?'}</span></td>
-                  <td style="font-size:12px">${data.tested_snps || 0}/${(data.tested_snps || 0) + (data.missing_snps || 0)}</td>
-                  <td style="font-size:12px;color:var(--text-muted)">${data.genes?.slice(0, 4).join(', ') || ''}</td>
-                </tr>
-                <tr id="${catId}" style="display:none">
-                  <td colspan="5" style="padding:0">
-                    <div style="background:var(--bg-tertiary);padding:12px 16px;border-radius:4px;margin:4px 0">
-                      ${this._plainLangForCat(cat, plainLang)}
-                      ${snps.length > 0 ? `
-                        <div style="margin-top:10px">
-                          ${snps.map(s => `
-                            <div style="padding:8px 0;border-bottom:1px solid var(--border-light)">
-                              <div style="font-weight:600;font-size:13px;color:var(--text-primary)">
-                                ${s.gene || s.rsid} (${s.rsid})
-                                <span class="${this._scoreClass((s.raw_score || 0) * 10)}" style="font-size:11px;margin-left:8px">
-                                  ${s.risk_count != null ? s.risk_count + ' Risiko-Allele' : '—'}
-                                </span>
-                              </div>
-                              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${s.description || ''}</div>
-                              ${s.effect ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">🧬 Wirkung: ${this._effectLabel(s.effect)}</div>` : ''}
-                              ${s.recommendation ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">💡 ${s.recommendation}</div>` : ''}
-                            </div>
-                          `).join('')}
-                        </div>
-                      ` : '<div class="text-xs" style="color:var(--text-muted)">Keine SNP-Details verfügbar</div>'}
-                    </div>
-                  </td>
-                </tr>`;
-              }).join('')}
-          </tbody>
-        </table>
+        ${this._scoreTableHtml(standardScores, categoryExplanations, plainLang)}
       </div>
+
+      ${hasExpert ? `
+      <div class="card">
+        <div class="card-title">🔬 Experten-Scores (610 SNPs)</div>
+        <div class="card-subtitle">Erweiterte Abdeckung — zusätzliche Gene und Kategorien aus dem Expert-Panel</div>
+        ${this._scoreTableHtml(expertScores, {}, {})}
+      </div>` : ''}
 
       ${results.risk_profile?.interactions?.length > 0 ? `
       <div class="card">
@@ -1019,6 +981,63 @@ const App = {
     setTimeout(() => {
       Charts.renderRadar('radar-chart', rp, categoryExplanations, plainLang);
     }, 50);
+  },
+
+  _scoreTableHtml(scores, explanations, plainLang) {
+    if (!scores || Object.keys(scores).length === 0) {
+      return '<div class="text-xs" style="color:var(--text-muted);padding:12px 0">Keine Daten verfügbar</div>';
+    }
+    return `
+      <table class="score-table">
+        <thead><tr>
+          <th>Kategorie</th>
+          <th>Score</th>
+          <th>Risiko</th>
+          <th>SNPs</th>
+          <th>Gene</th>
+        </tr></thead>
+        <tbody>
+          ${Object.entries(scores)
+            .sort((a, b) => (b[1]?.score || 0) - (a[1]?.score || 0))
+            .map(([cat, data]) => {
+              const catId = 'snp-detail-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
+              const snps = data.contributing_snps || [];
+              return `
+              <tr style="cursor:pointer" onclick="App._toggleSnpDetail('${catId}')">
+                <td style="font-weight:500">${this._catLabel(cat)}</td>
+                <td><span class="${this._scoreClass(data.score || 0)}">${data.score != null ? data.score.toFixed(1) : '—'}</span></td>
+                <td><span class="badge ${data.category === 'Erhöht' ? 'badge-high' : data.category === 'Moderat' ? 'badge-moderate' : 'badge-low'}">${data.category || '?'}</span></td>
+                <td style="font-size:12px">${data.tested_snps || 0}/${(data.tested_snps || 0) + (data.missing_snps || 0)}</td>
+                <td style="font-size:12px;color:var(--text-muted)">${data.genes?.slice(0, 4).join(', ') || ''}</td>
+              </tr>
+              <tr id="${catId}" style="display:none">
+                <td colspan="5" style="padding:0">
+                  <div style="background:var(--bg-tertiary);padding:12px 16px;border-radius:4px;margin:4px 0">
+                    ${this._plainLangForCat(cat, plainLang)}
+                    ${snps.length > 0 ? `
+                      <div style="margin-top:10px">
+                        ${snps.map(s => `
+                          <div style="padding:8px 0;border-bottom:1px solid var(--border-light)">
+                            <div style="font-weight:600;font-size:13px;color:var(--text-primary)">
+                              ${s.gene || s.rsid} (${s.rsid})
+                              <span class="${this._scoreClass((s.raw_score || 0) * 10)}" style="font-size:11px;margin-left:8px">
+                                ${s.risk_count != null ? s.risk_count + ' Risiko-Allele' : '—'}
+                              </span>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${s.description || ''}</div>
+                            ${s.effect ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">🧬 Wirkung: ${this._effectLabel(s.effect)}</div>` : ''}
+                            ${s.recommendation ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">💡 ${s.recommendation}</div>` : ''}
+                          </div>
+                        `).join('')}
+                      </div>
+                    ` : '<div class="text-xs" style="color:var(--text-muted)">Keine SNP-Details verfügbar</div>'}
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')}
+        </tbody>
+      </table>
+    `;
   },
 
   /* ================================================================
@@ -1550,6 +1569,7 @@ const App = {
   },
 
   _effectLabel(effect) {
+    // 1. Individuelle Übersetzungen für bekannte Effekte (52 Standard-SNPs)
     const labels = {
       'verringerte_Folat_Umwandlung': 'Reduzierte Folat-Umwandlung — der Körper kann Folsäure aus der Nahrung schlechter in die aktive Form (5-MTHF) umwandeln. Das bremst den gesamten Methyl-Stoffwechsel aus.',
       'verringerte_LC_PUFA_Synthese': 'Reduzierte Omega-3-Eigenproduktion — der Körper kann aus pflanzlichen Omega-3-Quellen (Leinsamen, Walnüsse) weniger langkettige Fettsäuren (EPA/DHA) herstellen. Direktes Fischöl oder Algenöl ist hier sinnvoller.',
@@ -1567,45 +1587,139 @@ const App = {
       'verringerte_Lipolyse': 'Reduzierte Fettfreisetzung — Fettdepots geben gespeichertes Fett langsamer ans Blut ab. Bei Sport oder Fasten kann der Körper schwer auf Fettreserven zugreifen.',
       'erhoehte_Triglyceride': 'Erhöhte Blutfett-Werte — der Körper baut Nahrungsfette langsamer ab. Die Triglyceride im Blut können ansteigen, ein Risikofaktor für Herz-Kreislauf.',
       'erhoehtes_LDL_bei_gesaettigten_Fetten': 'Erhöhtes LDL bei gesättigten Fetten — der Körper reagiert empfindlicher auf gesättigte Fettsäuren. Bei fettreicher Ernährung steigt das LDL-Cholesterin stärker an.',
-      'verringerte_mitochondriale_Antioxidans': 'Reduzierte Antioxidans-Abwehr in den Zellkraftwerken (Mitochondrien). Die Zellen sind anfälliger für oxidativen Stress — wie Rost in einer Maschine.',
+      'verringerte_mitochondriale_Antioxidans': 'Reduzierte Antioxidans-Abwehr in den Zellkraftwerken. Die Zellen sind anfälliger für oxidativen Stress.',
       'beeintraechtigte_mitochondriale_Funktion': 'Beeinträchtigte Mitochondrien-Funktion — die Zellkraftwerke arbeiten weniger effizient. Das kann sich in geringerer Energie und schnellerer Ermüdung äußern.',
-      'verringerte_mitochondriale_Biogenese': 'Reduzierte Neubildung von Mitochondrien — der Körper kann weniger neue Zellkraftwerke bauen. Besonders bei Sportpasen regeneriert die Energie langsamer.',
-      'verringerte_CoQ10_Regeneration': 'Reduzierte CoQ10-Regeneration — Coenzym Q10 wird schlechter recycelt. Es fehlt in den Mitochondrien als wichtiger Energielieferant.',
+      'verringerte_mitochondriale_Biogenese': 'Reduzierte Neubildung von Mitochondrien — der Körper kann weniger neue Zellkraftwerke bauen.',
+      'verringerte_CoQ10_Regeneration': 'Reduzierte CoQ10-Regeneration — Coenzym Q10 wird schlechter recycelt. Es fehlt in den Mitochondrien als Energielieferant.',
       'langsamer_Koffein_Stoffwechsel': 'Langsamer Koffein-Abbau — Koffein bleibt 3-4x länger im Blut. Eine Tasse Kaffee am Mittag kann noch abends den Schlaf stören.',
-      'veraenderter_Koffein_Stoffwechsel': 'Veränderter Koffein-Abbau — die Geschwindigkeit, mit der Koffein abgebaut wird, weicht vom Durchschnitt ab. Die Wirkung von Kaffee kann stärker oder länger ausfallen.',
-      'erhoehte_Phase1_Aktivitaet': 'Erhöhte Phase-1-Entgiftung — die erste Stufe der Leber-Entgiftung läuft schneller. Das klingt gut, kann aber mehr aggressive Zwischenprodukte erzeugen, wenn Phase 2 nicht mithält.',
-      'verringerte_Glutathion_Peroxidase': 'Reduzierte Glutathion-Aktivität — ein wichtiges Antioxidans-Enzym arbeitet langsamer. Der Körper kann freie Radikale schlechter unschädlich machen.',
-      'verringerte_LDL_Oxidationsschutz': 'Reduzierter Schutz vor LDL-Oxidation — das "gute" HDL kann LDL-Cholesterin schlechter vor oxidativer Schädigung schützen. Oxidiertes LDL ist besonders gefäßschädigend.',
-      'verringerte_NO_Produktion': 'Reduzierte Stickstoffmonoxid-Produktion — NO weitet die Blutgefäße und senkt den Blutdruck. Weniger NO bedeutet, dass sich die Gefäße schlechter entspannen können.',
-      'verringerte_VitaminC_Rueckresorption': 'Reduzierte Vitamin-C-Rückresorption — die Nieren können Vitamin C schlechter zurückhalten. Mehr Vitamin C geht mit dem Urin verloren, der Bedarf steigt.',
-      'verringerte_Beta_Carotin_Umwandlung': 'Reduzierte Beta-Carotin-Umwandlung — der Körper kann pflanzliches Beta-Carotin (aus Karotten, Süßkartoffeln) schlechter in aktives Vitamin A umwandeln.',
-      'verringerte_B6_Nutzung': 'Reduzierte Vitamin-B6-Nutzung — B6 wird für über 100 Enzymreaktionen gebraucht, u.a. für den Eiweißstoffwechsel und die Nervenfunktion. Die Wirksamkeit ist herabgesetzt.',
-      'verringerte_DHA_Synthese': 'Reduzierte DHA-Eigenproduktion — DHA ist die wichtigste Omega-3-Fettsäure für Gehirn und Augen. Der Körper kann sie schlechter selbst herstellen.',
-      'verringerte_Fast_Twitch_Fasern': 'Weniger schnelle Muskelfasern (Fast-Twitch) — der Anteil an explosiven, kraftvollen Muskelfasern ist genetisch niedriger. Krafttraining kann das ausgleichen.',
-      'verringerte_ATP_Regeneration': 'Verlangsamte ATP-Regeneration — ATP ist der Treibstoff der Muskeln. Die Energie-Reserven werden nach Belastung langsamer wieder aufgefüllt, die Erholung dauert länger.',
-      'veraenderte_Dopamin_Regulation': 'Veränderte Dopamin-Regulation — Dopamin ist ein Botenstoff für Motivation, Belohnung und Antrieb. Die Regulation weicht vom Durchschnitt ab.',
-      'veraenderte_Dopamin_Rezeptordichte': 'Veränderte Dopamin-Rezeptordichte — die Anzahl der Andockstellen für Dopamin im Gehirn ist verändert. Das kann Antrieb, Fokus und Belohnungsempfinden beeinflussen.',
-      'verlangsamter_Katecholamin_Abbau': 'Verlangsamter Abbau von Stressbotenstoffen — Adrenalin und Noradrenalin bleiben länger im Blut. Die Stressreaktion klingt langsamer ab.',
-      'veraenderte_Katecholamin_Ansprechbarkeit': 'Veränderte Ansprechbarkeit auf Stresshormone — der Körper reagiert anders auf Adrenalin und Noradrenalin. Das kann die Stressverarbeitung und den Energiehaushalt beeinflussen.',
-      'COMT_Haplotyp_Bestimmung': 'COMT-Haplotyp-Bestimmung — COMT baut Dopamin und Stresshormone ab. Je nach Variante arbeiten Sie entweder fokussiert-ruhig (Val/Val) oder flexibel-kreativ (Met/Met).',
-      'erhoehtes_Risiko_fuer_Uebergewicht': 'Erhöhtes Risiko für Übergewicht — der Appetit und der Energieverbrauch werden genetisch beeinflusst. Es fällt schwerer, ein gesundes Gewicht zu halten.',
-      'beeintraechtigter_Kohlenhydrat_Stoffwechsel': 'Beeinträchtigter Kohlenhydrat-Stoffwechsel — der Blutzucker wird nach kohlenhydratreichen Mahlzeiten langsamer reguliert. Das Risiko für Stoffwechselprobleme ist erhöht.',
-      'veraenderter_Fettstoffwechsel': 'Veränderter Fettstoffwechsel — die Verarbeitung von Nahrungsfetten und Cholesterin weicht vom Durchschnitt ab. Der Körper hat mehr Mühe, Fette richtig zu verstoffwechseln.',
-      'veraenderter_Alkoholstoffwechsel': 'Veränderter Alkohol-Stoffwechsel — Alkohol wird anders abgebaut als normal. Es können sich mehr schädliche Zwischenprodukte (Acetaldehyd) ansammeln.',
-      'beeintraechtigter_Acetaldehyd_Abbau': 'Beeinträchtigter Acetaldehyd-Abbau — Acetaldehyd, ein giftiges Abbauprodukt von Alkohol, wird langsamer abgebaut. Das verstärkt den Kater und die Zellschädigung.',
-      'Laktase_Nicht_Persistenz': 'Laktase-Mangel — das Enzym für Milchzucker (Laktose) wird nach dem Kindesalter abgeschaltet. Milchprodukte können Blähungen und Bauchschmerzen auslösen.',
-      'Zoeliakie_Risiko': 'Zöliakie-Risiko — das Immunsystem kann auf Gluten überreagieren und die Dünndarmschleimhaut angreifen. Eine genetische Veranlagung, keine Erkrankung.',
-      'Zoeliakie_Risiko_DQ8': 'Zöliakie-Risiko (Typ DQ8) — eine der beiden Hauptrisiko-Varianten für Gluten-Unverträglichkeit. Die Dünndarmschleimhaut kann bei Gluten-Kontakt reagieren.',
-      'erhoehtes_Autoimmun_Risiko': 'Erhöhtes Autoimmun-Risiko — das Immunsystem kann dazu neigen, körpereigenes Gewebe anzugreifen. Besonders bei zusätzlichen Auslösern (Infekte, Stress, Rauchen).',
-      'veraenderte_Immunregulation': 'Veränderte Immunregulation — die Balance zwischen Abwehr und Toleranz ist verschoben. Das Immunsystem arbeitet entweder zu schwach oder zu stark.',
-      'APOE_epsilon2_niedrigeres_LDL': 'APOE ε2 — diese Variante ist mit niedrigerem LDL-Cholesterin verbunden, aber auch mit erhöhten Triglyceriden. Ein gemischtes genetisches Profil für den Fettstoffwechsel.',
-      'verringerte_Histamin_Aktivitaet': 'Reduzierte Histamin-Aktivität — Histamin wird langsamer abgebaut. Nach histaminreichen Lebensmitteln (Käse, Wein, fermentiertes) können Kopfschmerzen oder Hautreaktionen auftreten.',
-      'veraenderter_Transsulfurierungsweg': 'Veränderter Transsulfurierungsweg — dieser Stoffwechselweg baut Homocystein über Cystein zu Glutathion ab. Ist er gestört, fehlt dem Körper der wichtigste Antioxidans-Schutz.',
-      'CYP2D6Star4_Nullaktivitaet': 'CYP2D6 *4 — dieser Genabschnitt ist komplett inaktiv. Viele Medikamente werden langsamer abgebaut (Betablocker, Antidepressiva, Schmerzmittel).',
-      'CYP2D6Star10_ReduzierteAktivitaet': 'CYP2D6 *10 — reduziert die Enzymaktivität auf etwa 30%. Medikamente werden langsamer verarbeitet, niedrigere Dosen können ausreichen.',
-      'CYP2D6Star41_VerminderteExpression': 'CYP2D6 *41 — verminderte Enzymproduktion auf etwa 50%. Die Medikamenten-Verarbeitung ist verlangsamt, aber nicht komplett eingestellt.',
+      'veraenderter_Koffein_Stoffwechsel': 'Veränderter Koffein-Abbau — die Geschwindigkeit, mit der Koffein abgebaut wird, weicht vom Durchschnitt ab.',
+      'erhoehte_Phase1_Aktivitaet': 'Erhöhte Phase-1-Entgiftung — die erste Stufe der Leber-Entgiftung läuft schneller. Das kann mehr aggressive Zwischenprodukte erzeugen.',
+      'verringerte_Glutathion_Peroxidase': 'Reduzierte Glutathion-Aktivität — ein wichtiges Antioxidans-Enzym arbeitet langsamer.',
+      'verringerte_LDL_Oxidationsschutz': 'Reduzierter Schutz vor LDL-Oxidation — das LDL-Cholesterin wird leichter geschädigt.',
+      'verringerte_NO_Produktion': 'Reduzierte Stickstoffmonoxid-Produktion — die Blutgefäße können sich schlechter entspannen.',
+      'verringerte_VitaminC_Rueckresorption': 'Reduzierte Vitamin-C-Rückresorption — die Nieren können Vitamin C schlechter zurückhalten. Der Bedarf steigt.',
+      'verringerte_Beta_Carotin_Umwandlung': 'Reduzierte Beta-Carotin-Umwandlung — der Körper kann pflanzliches Beta-Carotin schlechter in aktives Vitamin A umwandeln.',
+      'verringerte_B6_Nutzung': 'Reduzierte Vitamin-B6-Nutzung — B6 wird für über 100 Enzymreaktionen gebraucht. Die Wirksamkeit ist herabgesetzt.',
+      'verringerte_DHA_Synthese': 'Reduzierte DHA-Eigenproduktion — DHA ist die wichtigste Omega-3-Fettsäure für Gehirn und Augen.',
+      'verringerte_Fast_Twitch_Fasern': 'Weniger schnelle Muskelfasern — der Anteil an explosiven, kraftvollen Muskelfasern ist genetisch niedriger.',
+      'verringerte_ATP_Regeneration': 'Verlangsamte ATP-Regeneration — die Energie-Reserven der Muskeln werden nach Belastung langsamer wieder aufgefüllt.',
+      'veraenderte_Dopamin_Regulation': 'Veränderte Dopamin-Regulation — Dopamin ist ein Botenstoff für Motivation, Belohnung und Antrieb.',
+      'veraenderte_Dopamin_Rezeptordichte': 'Veränderte Dopamin-Rezeptordichte — die Anzahl der Andockstellen für Dopamin im Gehirn ist verändert.',
+      'verlangsamter_Katecholamin_Abbau': 'Verlangsamter Abbau von Stressbotenstoffen — Adrenalin und Noradrenalin bleiben länger im Blut.',
+      'veraenderte_Katecholamin_Ansprechbarkeit': 'Veränderte Ansprechbarkeit auf Stresshormone — der Körper reagiert anders auf Adrenalin.',
+      'COMT_Haplotyp_Bestimmung': 'COMT baut Dopamin und Stresshormone ab. Je nach Variante arbeiten Sie entweder fokussiert-ruhig oder flexibel-kreativ.',
+      'erhoehtes_Risiko_fuer_Uebergewicht': 'Erhöhtes Risiko für Übergewicht — Appetit und Energieverbrauch werden genetisch beeinflusst.',
+      'beeintraechtigter_Kohlenhydrat_Stoffwechsel': 'Beeinträchtigter Kohlenhydrat-Stoffwechsel — der Blutzucker wird nach kohlenhydratreichen Mahlzeiten langsamer reguliert.',
+      'veraenderter_Fettstoffwechsel': 'Veränderter Fettstoffwechsel — die Verarbeitung von Nahrungsfetten und Cholesterin weicht vom Durchschnitt ab.',
+      'veraenderter_Alkoholstoffwechsel': 'Veränderter Alkohol-Stoffwechsel — Alkohol wird anders abgebaut als normal.',
+      'beeintraechtigter_Acetaldehyd_Abbau': 'Beeinträchtigter Acetaldehyd-Abbau — ein giftiges Abbauprodukt von Alkohol wird langsamer abgebaut.',
+      'Laktase_Nicht_Persistenz': 'Laktase-Mangel — das Enzym für Milchzucker wird nach dem Kindesalter abgeschaltet. Milchprodukte können Blähungen und Bauchschmerzen auslösen.',
+      'Zoeliakie_Risiko': 'Zöliakie-Risiko — das Immunsystem kann auf Gluten überreagieren und die Dünndarmschleimhaut angreifen.',
+      'Zoeliakie_Risiko_DQ8': 'Zöliakie-Risiko (Typ DQ8) — eine der beiden Hauptrisiko-Varianten für Gluten-Unverträglichkeit.',
+      'erhoehtes_Autoimmun_Risiko': 'Erhöhtes Autoimmun-Risiko — das Immunsystem kann dazu neigen, körpereigenes Gewebe anzugreifen.',
+      'veraenderte_Immunregulation': 'Veränderte Immunregulation — die Balance zwischen Abwehr und Toleranz ist verschoben.',
+      'APOE_epsilon2_niedrigeres_LDL': 'APOE ε2 — diese Variante ist mit niedrigerem LDL-Cholesterin verbunden, aber auch mit erhöhten Triglyceriden.',
+      'verringerte_Histamin_Aktivitaet': 'Reduzierte Histamin-Aktivität — Histamin wird langsamer abgebaut. Nach histaminreichen Lebensmitteln können Kopfschmerzen oder Hautreaktionen auftreten.',
+      'veraenderter_Transsulfurierungsweg': 'Veränderter Transsulfurierungsweg — dieser Weg baut Homocystein zu Glutathion ab. Ist er gestört, fehlt Antioxidans-Schutz.',
+      'CYP2D6Star4_Nullaktivitaet': 'CYP2D6 *4 — dieser Genabschnitt ist komplett inaktiv. Medikamente werden langsamer abgebaut.',
+      'CYP2D6Star10_ReduzierteAktivitaet': 'CYP2D6 *10 — reduziert die Enzymaktivität auf etwa 30%. Medikamente werden langsamer verarbeitet.',
+      'CYP2D6Star41_VerminderteExpression': 'CYP2D6 *41 — verminderte Enzymproduktion auf etwa 50%. Medikamenten-Verarbeitung ist verlangsamt.',
+      'Laktase_Persistenz': 'Laktase-Persistenz — das Enzym für Milchzucker bleibt ein Leben lang aktiv. Milchprodukte werden gut vertragen.',
     };
-    return labels[effect] || effect.replace(/_/g, ' ');
+
+    if (labels[effect]) return labels[effect];
+
+    // 2. Automatische Generierung für Expert-Effekte (384+)
+    return this._autoEffectLabel(effect);
+  },
+
+  _autoEffectLabel(effect) {
+    // Prefix-Übersetzungen
+    const prefixMap = {
+      'verringerte_': 'Reduzierte ',
+      'verringertes_': 'Reduziertes ',
+      'erhoehte_': 'Erhöhte ',
+      'erhoehtes_': 'Erhöhtes ',
+      'erhoehten_': 'Erhöhter ',
+      'erhoehter_': 'Erhöhter ',
+      'beeintraechtigte_': 'Beeinträchtigte ',
+      'beeintraechtigter_': 'Beeinträchtigter ',
+      'veraenderte_': 'Veränderte ',
+      'veraenderter_': 'Veränderter ',
+      'veraendertes_': 'Verändertes ',
+      'verlangsamter_': 'Verlangsamter ',
+      'verlangsamte_': 'Verlangsamte ',
+      'fehlende_': 'Fehlende ',
+      'fehlender_': 'Fehlender ',
+      'reduced_': 'Reduced ',
+      'accelerated_': 'Accelerated ',
+      'altered_': 'Altered ',
+    };
+
+    // Suffix-Erklärungen für bekannte Endungen
+    const suffixExplanations = {
+      '_Aktivität': ' — das Enzym arbeitet anders als normal.',
+      '_Aktivity': ' — the enzyme activity is altered.',
+      '_Expression': ' — die Produktion dieses Proteins ist verändert.',
+      '_Produktion': ' — die Produktion dieses Botenstoffs ist verändert.',
+      '_Spiegel': ' — der Spiegel dieses Stoffes im Blut ist genetisch beeinflusst.',
+      '_Synthese': ' — die körpereigene Herstellung ist verändert.',
+      '_Stoffwechsel': ' — der Stoffwechselweg arbeitet anders als normal.',
+      '_Aufnahme': ' — die Aufnahme dieses Nährstoffs ist verändert.',
+      '_Abbau': ' — der Abbau dieses Stoffes läuft anders als normal.',
+      '_Neigung': ' — die grundsätzliche Neigung ist genetisch erhöht.',
+      '_Risiko': ' — das Risiko ist genetisch leicht erhöht.',
+      '_Transport': ' — der Transport dieses Stoffes im Körper ist verändert.',
+      '_Funktion': ' — die Funktion dieses Gens/Proteins ist verändert.',
+      '_Signalweg': ' — der Signalweg in der Zelle ist verändert.',
+      '_Wirkung': ' — die Wirkung dieses Botenstoffs ist verändert.',
+      '_Aktivierung': ' — die Aktivierung dieser Substanz ist verändert.',
+      '_Umwandlung': ' — die Umwandlung in die aktive Form ist verändert.',
+      '_Oxidation': ' — der oxidative Abbau ist verändert.',
+      '_Regeneration': ' — die Regeneration dieses Stoffes ist verändert.',
+      '_Binding': ' — die Bindung an den Rezeptor ist verändert.',
+      '_Regulation': ' — die Regulation dieses Prozesses ist verändert.',
+      '_Ausscheidung': ' — die Ausscheidung über die Nieren ist verändert.',
+      '_Veresterung': ' — die Veresterung dieses Stoffes ist verändert.',
+      '_Hydroxylierung': ' — der Hydroxylierungs-Schritt ist verändert.',
+      '_Inaktivierung': ' — die Inaktivierung ist verändert.',
+      '_Rezeptordichte': ' — die Anzahl der Rezeptoren ist verändert.',
+      '_Rezeptor': ' — der Rezeptor für diesen Botenstoff arbeitet anders.',
+      '_Metabolismus': ' — der Metabolismus (Stoffwechsel) ist verändert.',
+      '_Sensitivität': ' — die Empfindlichkeit gegenüber diesem Stoff ist verändert.',
+    };
+
+    let name = effect;
+
+    // Prefix ersetzen
+    for (const [prefix, replacement] of Object.entries(prefixMap)) {
+      if (name.startsWith(prefix)) {
+        name = replacement + name.slice(prefix.length);
+        break;
+      }
+    }
+
+    // Unterstriche durch Leerzeichen ersetzen für den Rest
+    name = name.replace(/_/g, ' ').trim();
+
+    // Großbuchstabe am Anfang
+    name = name.charAt(0).toUpperCase() + name.slice(1);
+
+    // Suffix-Erklärung suchen
+    for (const [suffix, explanation] of Object.entries(suffixExplanations)) {
+      const searchSuffix = suffix.replace(/_/g, ' ');
+      if (effect.includes(suffix) && !name.includes(explanation)) {
+        name += explanation;
+        break;
+      }
+    }
+
+    // Fallback: allgemeine Erklärung anhängen wenn noch keine
+    if (!name.includes('—')) {
+      name += ' — dieser genetische Marker wurde im Experten-Panel analysiert und weicht vom Durchschnitt ab.';
+    }
+
+    return name;
   },
 };
 

@@ -175,6 +175,7 @@ def analyze():
     expert_snp_calls = None
     expert_found = 0
     expert_cat_scores = {}
+    standard_cat_scores = dict(risk_profile['category_scores'])  # Original sichern VOR Merge
     if EXPERT_PANEL:
         expert_snp_calls = extract_expert_genotypes(genotypes, EXPERT_PANEL)
         expert_found = sum(1 for v in expert_snp_calls.values() if v['status'] == 'found')
@@ -207,6 +208,8 @@ def analyze():
             'interactions': risk_profile.get('interactions', []),
             'executive_summary': risk_profile.get('executive_summary', []),
         },
+        'standard_category_scores': _serialize_scores(standard_cat_scores),
+        'expert_category_scores': _serialize_scores(expert_cat_scores) if expert_cat_scores else {},
         'snp_calls': _snp_calls_safe(snp_calls),
         'methylation_score': methylation_score,
         'supplement_plan': supplement_plan,
