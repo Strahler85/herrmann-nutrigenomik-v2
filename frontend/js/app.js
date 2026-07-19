@@ -1424,31 +1424,35 @@ const App = {
     body.innerHTML = `
       <div class="card">
         <div class="card-title">💉 Verträglichkeit (CYP450)</div>
-        <div class="card-subtitle">Medikamenten-Verträglichkeit basierend auf Ihren CYP-Genvarianten</div>
+        <div class="card-subtitle">Ob ein Medikament bei Ihnen normal wirkt, stärker oder schwächer — das liegt an Ihren Genen für den Medikamenten-Abbau in der Leber.</div>
 
         ${Object.keys(phenotypes).length > 0 ? `
           <div class="mb-4">
-            <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Ihr CYP-Profil</div>
+            <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Ihr Leber-Enzym-Profil (CYP450)</div>
             <div style="display:flex;flex-wrap:wrap;gap:8px">
               ${Object.entries(phenotypes).map(([gene, pheno]) => `
-                <span class="drug-tag" style="background:var(--bg-tertiary);padding:6px 12px">
-                  <strong>${gene}</strong>: ${pheno.phenotype || pheno}
+                <span class="drug-tag" style="background:var(--bg-tertiary);padding:6px 12px;cursor:default">
+                  <strong>${gene}</strong>: ${this._translatePhenotype(pheno.phenotype || pheno)}
                 </span>
               `).join('')}
             </div>
+            <div class="text-xs mt-2" style="color:var(--text-muted);line-height:1.6">
+              ${this._cypExplanation(Object.keys(phenotypes))}
+            </div>
           </div>
-        ` : ''}
+        ` : '<div class="text-xs" style="color:var(--text-muted);padding:8px 0">Keine CYP-Gen-Daten in Ihrer DNA-Datei gefunden.</div>'}
       </div>
 
       <div class="card">
         <div class="card-title">⚠️ Warnungen & Interaktionen</div>
-        ${drugWarnings.length > 0 ? drugWarnings.map(w => `
-          <div class="drug-warning ${w.severity || 'verringert'}">
-            <div class="drug-warning-name">${w.drug || w.medikament} ${w.severity === 'erhoeht' ? '🔴' : w.severity === 'positiv' ? '🟢' : '🟡'}</div>
-            <div class="drug-warning-desc">${w.description || w.effekt || w.warning || ''}</div>
-            ${w.recommendation || w.empfehlung ? `<div class="drug-warning-desc" style="margin-top:2px">💡 ${w.recommendation || w.empfehlung}</div>` : ''}
+        ${drugWarnings.length > 0 ? `
+          <div class="text-xs mb-3" style="color:var(--text-secondary);line-height:1.6">
+            Diese Warnungen zeigen, wie Ihre Leber-Enzyme Ihre Medikamente verarbeiten.
+            Je nach Genvariante kann ein Medikament <strong>stärker oder schwächer wirken</strong> als üblich.
+            Die Empfehlungen basieren auf den CPIC-Richtlinien (Clinical Pharmacogenetics Implementation Consortium).
           </div>
-        `).join('') : `
+          ${drugWarnings.map(w => this._drugWarningCard(w)).join('')}
+        ` : `
           <div class="text-xs" style="color:var(--text-muted);padding:12px 0">
             Keine Medikamenten-Warnungen. Fügen Sie Medikamente unter "Medikamente" in Daten hinzu.
           </div>
@@ -1457,6 +1461,93 @@ const App = {
 
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="App._renderPage('medications')">💊 Medikamente verwalten</button>
+        <button class="btn" onclick="App._renderPage('supplements')">💊 Supplemente prüfen</button>
+      </div>
+    `;
+  },
+
+  _translatePhenotype(pheno) {
+    if (!pheno) return 'normal';
+    const labels = {
+      'langsam (PM)': 'Langsamer Abbau (PM)',
+      'intermediaer (IM)': 'Verlangsamter Abbau (IM)',
+      'normal (EM)': 'Normaler Abbau (EM)',
+      'schnell (UM)': 'Schneller Abbau (UM)',
+      'langsam': 'Langsamer Abbau',
+      'schnell': 'Schneller Abbau',
+      'normal': 'Normaler Abbau',
+    };
+    return labels[pheno] || pheno;
+  },
+
+  _cypExplanation(genes) {
+    const explanations = {
+      'CYP2D6': 'CYP2D6 baut etwa 25% aller verschriebenen Medikamente ab — darunter viele Antidepressiva, Betablocker, Opioid-Schmerzmittel und Antipsychotika. Je nach Variante arbeiten Sie entweder "normal", "langsam" oder "schnell".',
+      'CYP2C19': 'CYP2C19 ist wichtig für Magensäure-Hemmer (Omeprazol), das Blutgerinnungsmittel Clopidogrel und einige Antidepressiva. Bei "langsamen" Varianten wirken diese Medikamente stärker und länger.',
+      'CYP2C9': 'CYP2C9 baut Blutverdünner (Warfarin, Phenprocoumon), entzündungshemmende Schmerzmittel und bestimmte Blutdruckmittel ab. Die Dosis muss bei Varianten oft angepasst werden.',
+      'CYP1A2': 'CYP1A2 baut Koffein, bestimmte Antidepressiva und Schmerzmittel ab. Raucher bauen diese Stoffe schneller ab (CYP1A2 wird durch Rauchen aktiviert).',
+      'CYP3A4': 'CYP3A4 ist das wichtigste Leber-Enzym überhaupt — es baut etwa 50% aller Medikamente ab. Dazu gehören viele Statine, Blutdruckmittel, Immunsuppressiva und Hormonpräparate.',
+    };
+    const found = genes.map(g => explanations[g] || '').filter(Boolean);
+    if (found.length === 0) return '';
+    return '🧬 ' + found.join('<br><br>🧬 ');
+  },
+
+  _drugWarningCard(w) {
+    const drug = w.drug || w.medikament || 'Unbekannt';
+    const severity = w.severity || 'verringert';
+    const pheno = w.phenotype || '';
+    const gene = w.gene || '';
+    const rec = w.recommendation || w.empfehlung || '';
+
+    // Severity label and icon
+    const sevConfig = {
+      'kontraindiziert': { icon: '⛔', label: 'Nicht empfohlen', color: 'var(--red)' },
+      'erhoeht': { icon: '🔴', label: 'Erhöhtes Risiko', color: 'var(--red)' },
+      'verringert': { icon: '🟡', label: 'Vorsicht geboten', color: 'var(--yellow)' },
+      'positiv': { icon: '🟢', label: 'Positiver Effekt', color: 'var(--green)' },
+    };
+    const cfg = sevConfig[severity] || sevConfig.verringert;
+
+    // Clean up recommendation text - remove technical prefixes
+    let cleanRec = rec
+      .replace(/^🟡 |^🔴 |^⛔ |^ℹ️ /, '')
+      .replace(/^ALTERNATIVE:\s*/, '')
+      .replace(/^DOSISANPASSUNG:\s*/i, '')
+      .replace(/^KONTRAINDIZIERT:\s*/i, '')
+      .replace(/^VORSICHT:\s*/i, '')
+      .replace(/^INFO:\s*/i, '')
+      .trim();
+
+    // Detailed explanation based on severity + gene
+    let explanation = '';
+    if (severity === 'kontraindiziert') {
+      explanation = 'Ihr Körper kann dieses Medikament nicht richtig verarbeiten. Es sollte nicht eingenommen werden — es gibt sicherere Alternativen.';
+    } else if (severity === 'erhoeht') {
+      if (pheno.includes('langsam')) {
+        explanation = `Weil Ihr ${gene}-Enzym verlangsamt arbeitet, baut Ihr Körper dieses Medikament langsamer ab. Es bleibt länger und stärker wirksam im Blut — die Dosis sollte reduziert werden.`;
+      } else if (pheno.includes('schnell')) {
+        explanation = `Weil Ihr ${gene}-Enzym beschleunigt arbeitet, baut Ihr Körper dieses Medikament sehr schnell ab. Es wirkt kürzer und schwächer — oft ist eine höhere Dosis nötig.`;
+      }
+    } else if (severity === 'verringert') {
+      if (pheno.includes('langsam')) {
+        explanation = `Ihr ${gene}-Enzym arbeitet verlangsamt. Dieses Medikament wird daher langsamer abgebaut — die Wirkung kann verstärkt sein.`;
+      } else if (pheno.includes('schnell')) {
+        explanation = `Ihr ${gene}-Enzym arbeitet beschleunigt. Dieses Medikament wird schneller abgebaut — die Wirkdauer kann verkürzt sein.`;
+      } else {
+        explanation = 'Die Verarbeitung dieses Medikaments weicht vom Durchschnitt ab. Eine Überwachung der Wirkung wird empfohlen.';
+      }
+    }
+
+    return `
+      <div class="drug-warning ${severity}">
+        <div class="flex justify-between items-center">
+          <div class="drug-warning-name">${cfg.icon} ${drug}</div>
+          <span class="badge ${severity === 'erhoeht' || severity === 'kontraindiziert' ? 'badge-high' : severity === 'positiv' ? 'badge-low' : 'badge-moderate'}">${cfg.label}</span>
+        </div>
+        <div class="text-xs" style="color:var(--text-muted);margin-top:2px">Betroffenes Enzym: ${gene} · Ihr Profil: ${this._translatePhenotype(pheno)}</div>
+        <div class="drug-warning-desc" style="margin-top:8px;line-height:1.6">${explanation || 'Dieses Medikament wird anders verarbeitet als beim Durchschnitt.'}</div>
+        ${cleanRec ? `<div class="drug-warning-desc" style="margin-top:6px;padding:8px;background:var(--bg-tertiary);border-radius:4px">💡 <strong>Empfehlung:</strong> ${cleanRec}</div>` : ''}
       </div>
     `;
   },
