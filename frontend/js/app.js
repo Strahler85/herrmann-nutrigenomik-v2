@@ -1117,7 +1117,7 @@ const App = {
       <div class="card">
         <div class="card-title">📊 Details zur Dosierung</div>
         <div class="text-xs" style="color:var(--text-muted)">
-          <p>1. Genetische Anpassung: Risiko-Gene × Faktor (prozentual, skaliert mit Gewicht)</p>
+          <p>1. Genetische Anpassung: Risiko-Gene × Faktor (prozentual, skaliert mit Gewicht) — <em>außer bei Omega-3, da FADS1/2 nur die ALA-Umwandlung betreffen, nicht fertiges EPA/DHA</em></p>
           <p>2. Gewichtsfaktor: +200 mg pro 20 kg</p>
           <p>3. Blutwert-Anpassung: z.B. Omega-3-Index &lt;8% → ×1.5</p>
           <p>4. Methylierungs-Score: +30% bei Score &gt;5</p>

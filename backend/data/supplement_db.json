@@ -4,7 +4,7 @@
     "id": "omega3",
     "category": "fettstoffwechsel",
     "base_dose_mg": 1000,
-    "base_note": "1 g/Tag EPA+DHA als Basis. Die übliche Herz-Kreislauf-Dosis von 1 g gilt für einen durchschnittlichen Erwachsenen (~70 kg). Bei höherem Körpergewicht wird die Dosis angepasst: +10 mg pro kg über 70 kg.",
+    "base_note": "1 g/Tag EPA+DHA als Basis. Hinweis: FADS1/2-Genvarianten beeinträchtigen die Umwandlung von pflanzlichem ALA (Leinsamen, Walnüsse) in EPA/DHA — nicht aber die Aufnahme von bereits fertig supplementiertem EPA/DHA aus Fischöl oder Algenöl. Der genetische Faktor entfällt daher bei direkter Supplementierung. Die Dosierung basiert auf Gewicht, Geschlecht, Alter und Blutwerten.",
     "unit": "mg",
     "max_daily_mg": 4000,
     "gene_bonus_mg": 0,
