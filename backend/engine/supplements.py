@@ -246,10 +246,21 @@ def _compute_dose(
                     else:
                         reasons.append(f'⚠ {w["drug"]}: {recommendation}')
     
-    # 7. SNP-SNP-Interaktions-Synergie (Epistasis) — ENTFERNT aus Dosierung
-    # Die Epistasis wird bereits im Risiko-Score und Gene-Bonus berücksichtigt.
-    # Eine zusätzliche Multiplikation würde FADS1/FADS2 doppelt bewerten.
-    # (Die Interaktionen sind weiterhin im Risikoprofil sichtbar.)
+    # 7. SNP-SNP-Interaktions-Synergie (Epistasis) — prozentuale Anpassung
+    # FADS1/2-Varianten reduzieren die EPA/DHA-Synthese prozentual (30-50%).
+    # Die Kompensation erfolgt daher ebenfalls prozentual (multiplikativ),
+    # sodass sie automatisch mit dem Körpergewicht skaliert.
+    if interactions and interactions.get('found_interactions'):
+        supp_genes = set(supp.get('genes', []))
+        for si in interactions['found_interactions']:
+            gene_a = si['gene_a']
+            gene_b = si['gene_b']
+            if gene_a in supp_genes or gene_b in supp_genes:
+                synergy_score = si['synergy_score']
+                if synergy_score > 0:
+                    bonus_factor = 1.0 + (synergy_score / 20)
+                    dose *= bonus_factor
+                    reasons.append(f'🧬 Genetischer Faktor ({gene_a}+{gene_b}): ×{bonus_factor:.2f}')
     
     # 8. Geschlechts-spezifische Anpassung
     gender_factors = supp.get('gender_factors', {})

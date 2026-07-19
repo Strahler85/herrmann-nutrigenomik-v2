@@ -7,7 +7,7 @@
     "base_note": "1 g/Tag EPA+DHA als Basis. Die übliche Herz-Kreislauf-Dosis von 1 g gilt für einen durchschnittlichen Erwachsenen (~70 kg). Bei höherem Körpergewicht wird die Dosis angepasst: +10 mg pro kg über 70 kg.",
     "unit": "mg",
     "max_daily_mg": 4000,
-    "gene_bonus_mg": 300,
+    "gene_bonus_mg": 0,
     "genes": [
       "FADS1",
       "FADS2",

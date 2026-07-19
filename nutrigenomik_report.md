@@ -1,7 +1,7 @@
 # Nutrigenomik & Supplement Report
 
-**Erstellt**: 19.07.2026 23:47
-**Profil**: 41 Jahre, 111 kg, m
+**Erstellt**: 19.07.2026 23:49
+**Profil**: 35 Jahre, 70 kg, w
 
 > **Hinweis**: Dieser Report dient zu Bildungszwecken. Er ersetzt keine ärztliche Beratung.
 
@@ -171,20 +171,21 @@
 
 | Supplement | Tagesdosis | Begründung |
 |------------|:----------:|------------|
-| Omega-3 (EPA/DHA) | 2710 mg | FADS1-Variante: +150 mg; FADS2-Variante: +150 mg; ELOVL2-Variante: +150 mg; APOE-Variante: +150 mg; Gewicht (111 kg): +1110 mg |
-| Magnesium | 450 mg | MTHFR-Variante: +15 mg; COMT-Variante: +15 mg; SOD2-Variante: +15 mg; Gewicht (111 kg): +150 mg; Geschlecht (Mann): ×1.15; Auf Tageshoechstdosis (450 mg) begrenzt |
-| Vitamin D3 + K2 | 2000 IE | VDR-Variante: +500 IE; GC-Variante: +500 IE |
-| 5-MTHF (aktives Folat) | 200 ug |  |
-| Vitamin B12 (Methylcobalamin) | 625 ug | MTR-Variante: +125 ug; MTRR-Variante: +125 ug; COMT-Variante: +125 ug |
-| Zink | 18 mg | SOD2-Variante: +2 mg; GSTP1-Variante: +2 mg; GPX1-Variante: +2 mg |
-| Selen | 75 ug | GPX1-Variante: +12 ug; SOD2-Variante: +12 ug |
-| CoQ10 (Ubiquinol) | 195 mg | NQO1-Variante: +25 mg; SOD2-Variante: +25 mg; Alter (41): ×1.3 (Koerpereigene CoQ10-Produktion sinkt ab 40) |
-| Curcumin (entzuendungshemmend) | 750 mg | TNF-Variante: +125 mg; IL6-Variante: +125 mg |
-| NAC (N-Acetylcystein) | 1200 mg | GSTP1-Variante: +150 mg; GPX1-Variante: +150 mg; NQO1-Variante: +150 mg; SOD2-Variante: +150 mg |
+| Omega-3 (EPA/DHA) | 2431 mg | Gewicht (70 kg): +700 mg; 🧬 Genetischer Faktor (FADS1+FADS2): ×1.12; 🧬 Genetischer Faktor (FADS1+ELOVL2): ×1.07; 🧬 Genetischer Faktor (FADS2+ELOVL2): ×1.07; Geschlecht (Frau): ×1.10 |
+| Magnesium | 450 mg | MTHFR-Variante: +15 mg; COMT-Variante: +15 mg; SOD2-Variante: +15 mg; Gewicht (70 kg): +150 mg; 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07; Auf Tageshoechstdosis (450 mg) begrenzt |
+| Vitamin D3 + K2 | 2419 IE | VDR-Variante: +500 IE; GC-Variante: +500 IE; 🧬 Genetischer Faktor (VDR+GC): ×1.12; 🧬 Genetischer Faktor (VDR+GC): ×1.07 |
+| 5-MTHF (aktives Folat) | 267 ug | 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05 |
+| Vitamin B12 (Methylcobalamin) | 834 ug | MTR-Variante: +125 ug; MTRR-Variante: +125 ug; COMT-Variante: +125 ug; 🧬 Genetischer Faktor (MTHFR+MTRR): ×1.10; 🧬 Genetischer Faktor (MTHFR+MTR): ×1.07; 🧬 Genetischer Faktor (MTHFR+COMT): ×1.07; 🧬 Genetischer Faktor (MTRR+COMT): ×1.05 |
+| Zink | 21 mg | SOD2-Variante: +2 mg; GSTP1-Variante: +2 mg; GPX1-Variante: +2 mg; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (GSTP1+GPX1): ×1.05; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07 |
+| Selen | 91 ug | GPX1-Variante: +12 ug; SOD2-Variante: +12 ug; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (GSTP1+GPX1): ×1.05; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07 |
+| CoQ10 (Ubiquinol) | 173 mg | NQO1-Variante: +25 mg; SOD2-Variante: +25 mg; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07 |
+| Curcumin (entzuendungshemmend) | 825 mg | TNF-Variante: +125 mg; IL6-Variante: +125 mg; 🧬 Genetischer Faktor (TNF+IL6): ×1.10 |
+| NAC (N-Acetylcystein) | 1200 mg | GSTP1-Variante: +150 mg; GPX1-Variante: +150 mg; NQO1-Variante: +150 mg; SOD2-Variante: +150 mg; 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (GSTP1+GPX1): ×1.05; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07; Auf Tageshoechstdosis (1200 mg) begrenzt |
 | Betain/Cholin (TMG) | 750 mg | BHMT-Variante: +250 mg |
-| Calcium (Citrat) | 625 mg | VDR-Variante: +125 mg |
-| Alpha-Liponsaeure (ALA) | 300 mg |  |
+| Calcium (Citrat) | 756 mg | VDR-Variante: +125 mg; 🧬 Genetischer Faktor (VDR+GC): ×1.12; 🧬 Genetischer Faktor (VDR+GC): ×1.07 |
+| Alpha-Liponsaeure (ALA) | 364 mg | 🧬 Genetischer Faktor (GSTP1+SOD2): ×1.07; 🧬 Genetischer Faktor (GSTP1+GPX1): ×1.05; 🧬 Genetischer Faktor (SOD2+GPX1): ×1.07 |
 | Vitamin A (Retinylpalmitat) | 1 ug |  |
+| Eisen (Ferritin) | 15 mg |  |
 
 *Sicherheit*: Antikoagulantien-Effekt bei >3 g/Tag. Bei Blutverdunnung Arzt konsultieren. Maximal 4 g/Tag ohne Aufsicht.
 *Sicherheit*: UL 350 mg/Tag aus Supplementen. >450 mg -> Durchfallrisiko. Bei Niereninsuffizienz (GFR <30) nicht ohne aerztliche Aufsicht.
@@ -201,6 +202,7 @@
 *Sicherheit*: >1000 mg Supplement + Ernaehrung kann Nierensteine foerdern.
 *Sicherheit*: Kann Blutzucker senken. Vorsicht bei Diabetes-Medikation.
 *Sicherheit*: Nicht ueber 3000 ug/Tag ohne Arzt. NICHT in der Schwangerschaft erhoehen.
+*Sicherheit*: NICHT fuer Maenner ohne nachgewiesenen Mangel! HFE-Haemochromatose-Risiko beachten.
 
 ---
 
@@ -210,6 +212,7 @@
 
 - **Omega-3**: Fettreicher Fisch (Makrele, Lachs, Sardinen) 2-3x/Woche
 - **Magnesium**: Kürbiskerne, Mandeln, dunkle Schokolade, grünes Blattgemüse
+- **Vitamin D**: Eier, fetter Fisch, Pilze. Vitamin-D-Spiegel optimieren
 
 ---
 
