@@ -1,6 +1,6 @@
 # Nutrigenomik & Supplement Report
 
-**Erstellt**: 19.07.2026 23:28
+**Erstellt**: 19.07.2026 23:35
 **Profil**: 35 Jahre, 75 kg, m
 
 > **Hinweis**: Dieser Report dient zu Bildungszwecken. Er ersetzt keine ärztliche Beratung.

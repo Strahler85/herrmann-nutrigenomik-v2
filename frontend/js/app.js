@@ -956,14 +956,14 @@ const App = {
         <div class="text-xs mb-3" style="color:var(--text-muted)">
           🟢 ≤3.5 Niedrig · 🟡 3.5–6.5 Moderat · 🔴 ≥6.5 Erhöht
         </div>
-        ${this._scoreTableHtml(standardScores, categoryExplanations, plainLang)}
+        ${this._scoreTableHtml(standardScores, categoryExplanations, plainLang, 'std')}
       </div>
 
       ${hasExpert ? `
       <div class="card">
         <div class="card-title">🔬 Experten-Scores (610 SNPs)</div>
         <div class="card-subtitle">Erweiterte Abdeckung — zusätzliche Gene und Kategorien aus dem Expert-Panel</div>
-        ${this._scoreTableHtml(expertScores, {}, {})}
+        ${this._scoreTableHtml(expertScores, {}, {}, 'exp')}
       </div>` : ''}
 
       ${results.risk_profile?.interactions?.length > 0 ? `
@@ -983,10 +983,11 @@ const App = {
     }, 50);
   },
 
-  _scoreTableHtml(scores, explanations, plainLang) {
+  _scoreTableHtml(scores, explanations, plainLang, prefix) {
     if (!scores || Object.keys(scores).length === 0) {
       return '<div class="text-xs" style="color:var(--text-muted);padding:12px 0">Keine Daten verfügbar</div>';
     }
+    const idPrefix = prefix || 'std';
     return `
       <table class="score-table">
         <thead><tr>
@@ -1000,7 +1001,7 @@ const App = {
           ${Object.entries(scores)
             .sort((a, b) => (b[1]?.score || 0) - (a[1]?.score || 0))
             .map(([cat, data]) => {
-              const catId = 'snp-detail-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
+              const catId = 'snp-' + idPrefix + '-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
               const snps = data.contributing_snps || [];
               return `
               <tr style="cursor:pointer" onclick="App._toggleSnpDetail('${catId}')">
