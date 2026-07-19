@@ -1,0 +1,1578 @@
+/* ── App — Main Application Logic ────────────────────────────────── */
+/* getbased-style Single Page Application                             */
+
+const App = {
+  /* ── Initialization ──────────────────────────────────────────── */
+  async init() {
+    this._bindNavigation();
+    this._bindGlobalEvents();
+    await this._checkStatus();
+    this._renderPage('dashboard');
+  },
+
+  /* ── Navigation ──────────────────────────────────────────────── */
+  _bindNavigation() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const page = item.dataset.page;
+        this._renderPage(page);
+      });
+    });
+  },
+
+  _renderPage(page) {
+    State.set('currentPage', page);
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+    if (navItem) navItem.classList.add('active');
+
+    const titles = {
+      dashboard: 'Übersicht',
+      dna: '🧬 DNA-Analyse',
+      blood: '🩸 Blutwerte',
+      medications: '💊 Medikamente',
+      genome: '🧬 Genomen',
+      supplements: '💊 Supplement-Empfehlungen',
+      tolerance: '💉 Verträglichkeit',
+      export: '📄 Report-Export',
+    };
+
+    document.getElementById('page-title').textContent = titles[page] || page;
+
+    switch (page) {
+      case 'dashboard': this._renderDashboard(); break;
+      case 'dna': this._renderDnaPage(); break;
+      case 'blood': this._renderBloodPage(); break;
+      case 'medications': this._renderMedicationsInputPage(); break;
+      case 'genome': this._renderProfilePage(); break;
+      case 'supplements': this._renderSupplementsPage(); break;
+      case 'tolerance': this._renderTolerancePage(); break;
+      case 'export': this._renderExportPage(); break;
+    }
+  },
+
+  /* ── Server Status ───────────────────────────────────────────── */
+  async _checkStatus() {
+    try {
+      const status = await API.status();
+      State.set('serverStatus', status);
+      const dot = document.getElementById('status-dot');
+      const text = document.getElementById('status-text');
+      dot.className = 'status-dot';
+      text.textContent = `${status.panel_size} SNPs · verbunden`;
+    } catch {
+      document.getElementById('status-dot').className = 'status-dot offline';
+      document.getElementById('status-text').textContent = 'Server offline';
+    }
+  },
+
+  /* ── Global Event Bindings ───────────────────────────────────── */
+  _bindGlobalEvents() {
+    // Start analyze button on welcome screen
+    document.getElementById('btn-start-analyze')?.addEventListener('click', () => {
+      this._renderPage('dna');
+    });
+  },
+
+  /* ================================================================
+     PAGE: DASHBOARD
+     ================================================================ */
+  _renderDashboard() {
+    const body = document.getElementById('main-body');
+    const results = State.get('results');
+
+    if (!results) {
+      body.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">🧬</div>
+          <div class="empty-state-title">Willkommen bei Herrmann Nutrigenomik</div>
+          <div class="empty-state-text">
+            Laden Sie Ihre DNA-Rohdaten hoch und starten Sie die Analyse,
+            um personalisierte Supplement-Empfehlungen zu erhalten.
+          </div>
+          <button class="btn btn-primary" onclick="App._renderPage('dna')">
+            🧬 Zur DNA-Analyse
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    const rp = results.risk_profile?.category_scores || {};
+    const ms = results.methylation_score || {};
+    const sp = results.supplement_plan || [];
+    const br = results.blood_results || [];
+
+    const highCats = Object.values(rp).filter(v => v.category === 'Erhöht').length;
+    const highSupps = sp.filter(s => s.risk_level === 'hoch').length;
+    const suboptimalBlood = br.filter(b => b.status !== 'optimal').length;
+
+    body.innerHTML = `
+      <div class="grid-5">
+        <div class="metric-card">
+          <div class="metric-value">${ms.score != null ? ms.score + '/10' : '—'}</div>
+          <div class="metric-label">🧬 Methylierung</div>
+          <div class="metric-delta ${this._scoreClass(ms.score || 0)}">${ms.level || ''}</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${results.snp_found || 0}/${results.snp_total || 0}</div>
+          <div class="metric-label">🎯 SNPs analysiert</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ${this._scoreClass(highCats * 3.3)}">${highCats}</div>
+          <div class="metric-label">🔴 Erhöhte Risiken</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value ${this._scoreClass(highSupps * 3.3)}">${highSupps}</div>
+          <div class="metric-label">💊 Supplemente (hoch)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">${br.length > 0 ? suboptimalBlood : '—'}</div>
+          <div class="metric-label">🩸 Blutwerte suboptimal</div>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="card">
+        <div class="flex justify-between items-center mb-3">
+          <span class="card-title" style="margin-bottom:0">🧬 Executive Summary</span>
+        </div>
+        ${results.risk_profile?.executive_summary?.length > 0
+          ? `<ul style="list-style:none;padding:0">
+              ${results.risk_profile.executive_summary.map(s =>
+                `<li style="padding:4px 0;font-size:13px;color:var(--text-secondary)">${s}</li>`
+              ).join('')}
+            </ul>`
+          : '<div class="text-xs" style="color:var(--text-muted)">Keine Executive Summary verfügbar</div>'
+        }
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="App._renderPage('genome')">🧬 Genomen anzeigen</button>
+        <button class="btn btn-primary" onclick="App._renderPage('supplements')">💊 Supplement-Plan</button>
+        <button class="btn" onclick="App._renderPage('tolerance')">💉 Verträglichkeit</button>
+      </div>
+    `;
+  },
+
+  /* ================================================================
+     PAGE: DNA ANALYSIS
+     ================================================================ */
+  _renderDnaPage() {
+    const body = document.getElementById('main-body');
+    const dnaLoaded = State.get('dnaLoaded');
+    const results = State.get('results');
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-title">DNA-Rohdaten hochladen</div>
+        <div class="card-subtitle">Unterstützt 23andMe (.txt), AncestryDNA (.csv) und VCF (.vcf/.vcf.gz)</div>
+
+        <div class="file-upload" id="dna-dropzone">
+          <div class="file-upload-icon">🧬</div>
+          <div class="file-upload-text">DNA-Datei hier ablegen oder klicken zum Auswählen</div>
+          <div class="file-upload-subtext">23andMe, AncestryDNA, VCF — bis zu 50 MB</div>
+          <input type="file" id="dna-file-input" accept=".txt,.csv,.vcf,.gz" style="display:none">
+        </div>
+      </div>
+
+      <div id="dna-status"></div>
+
+      <div id="dna-profile-form"></div>
+
+      <div id="dna-results"></div>
+    `;
+
+    this._bindDnaUpload();
+
+    if (dnaLoaded && results) {
+      this._renderDnaStatus(results);
+      this._renderProfileForm();
+      this._renderDnaResults(results);
+    } else if (dnaLoaded) {
+      this._renderProfileForm();
+    }
+  },
+
+  _bindDnaUpload() {
+    const dropzone = document.getElementById('dna-dropzone');
+    const input = document.getElementById('dna-file-input');
+
+    dropzone.addEventListener('click', () => input.click());
+    dropzone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        this._handleDnaFile(e.dataTransfer.files[0]);
+      }
+    });
+    input.addEventListener('change', () => {
+      if (input.files.length > 0) {
+        this._handleDnaFile(input.files[0]);
+      }
+    });
+  },
+
+  async _handleDnaFile(file) {
+    const statusDiv = document.getElementById('dna-status');
+    statusDiv.innerHTML = '<div class="alert alert-info">📄 Lade DNA-Datei...</div>';
+
+    try {
+      const formData = new FormData();
+      formData.append('dna', file);
+
+      // Quick parse status check via a lightweight approach
+      const profile = State.get('profile');
+      formData.append('profile', JSON.stringify(profile));
+
+      statusDiv.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><div class="loading-text">Analysiere DNA...</div></div><div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>';
+
+      const results = await API.analyze(formData, (msg, pct) => {
+        const fill = document.getElementById('progress-fill');
+        if (fill) fill.style.width = pct + '%';
+      });
+
+      State.set('results', results);
+      State.set('dnaLoaded', true);
+      State.set('analysisDone', true);
+
+      statusDiv.innerHTML = `<div class="alert alert-success">✅ ${file.name} — ${results.format}, ${results.genotype_count?.toLocaleString()} SNPs, ${results.snp_found}/${results.snp_total} Panel-SNPs gefunden</div>`;
+
+      this._renderProfileForm();
+      this._renderDnaResults(results);
+
+    } catch (err) {
+      statusDiv.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+    }
+  },
+
+  _renderDnaStatus(results) {
+    const statusDiv = document.getElementById('dna-status');
+    if (!statusDiv) return;
+    statusDiv.innerHTML = `
+      <div class="alert alert-success">
+        ✅ ${results.dna_file || 'DNA-Datei'} — ${results.format}, ${results.genotype_count?.toLocaleString()} SNPs,
+        ${results.snp_found}/${results.snp_total} Panel-SNPs gefunden
+      </div>
+    `;
+  },
+
+  _renderProfileForm() {
+    const div = document.getElementById('dna-profile-form');
+    if (!div) return;
+    const p = State.get('profile');
+
+    div.innerHTML = `
+      <div class="card">
+        <div class="card-title">📋 Nächste Schritte</div>
+        <div class="card-subtitle">Ergänzen Sie optionale Daten für präzisere Empfehlungen</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" onclick="App._renderPage('blood')" style="flex:1;justify-content:center">
+            🩸 Blutwerte eingeben
+          </button>
+          <button class="btn" onclick="App._renderPage('medications')" style="flex:1;justify-content:center">
+            💊 Medikamente verwalten
+          </button>
+        </div>
+        <div class="text-xs mt-2" style="color:var(--text-muted);text-align:center">
+          Daten jederzeit nachträglich ergänzbar · Supplemente werden automatisch neu berechnet
+        </div>
+        <hr class="section-divider">
+        <button class="btn btn-primary" id="btn-reanalyze" style="width:100%">🔄 Analyse aktualisieren</button>
+      </div>
+    `;
+
+    // Re-analyze
+    document.getElementById('btn-reanalyze').addEventListener('click', () => this._reanalyze());
+  },
+
+  async _drugSearch() {
+    const input = document.getElementById('drug-search-input');
+    const q = input.value.trim();
+    if (!q) return;
+
+    try {
+      const data = await API.drugSearch(q);
+      const resultsDiv = document.getElementById('drug-search-results');
+      if (data.results?.length > 0) {
+        resultsDiv.innerHTML = `
+          <div class="drug-tags">
+            ${data.results.map(d =>
+              `<span class="drug-tag" onclick="App._addDrug('${d.replace(/'/g, "\\'")}')">+ ${d}</span>`
+            ).join('')}
+          </div>
+        `;
+      } else {
+        resultsDiv.innerHTML = '<div class="text-xs" style="color:var(--text-muted)">Keine Treffer</div>';
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  _addDrug(name) {
+    const p = State.get('profile');
+    if (!p.drugs.includes(name)) {
+      p.drugs.push(name);
+      State.set('profile', p);
+    }
+    this._renderDrugTags();
+    document.getElementById('drug-search-results').innerHTML = '';
+    document.getElementById('drug-search-input').value = '';
+  },
+
+  _removeDrug(name) {
+    const p = State.get('profile');
+    p.drugs = p.drugs.filter(d => d !== name);
+    State.set('profile', p);
+    this._renderDrugTags();
+  },
+
+  _renderDrugTags() {
+    const div = document.getElementById('drug-tags');
+    if (!div) return;
+    const drugs = State.get('profile').drugs || [];
+    if (drugs.length === 0) {
+      div.innerHTML = '<div class="text-xs" style="color:var(--text-muted)">Keine Medikamente ausgewählt</div>';
+      return;
+    }
+    div.innerHTML = `
+      <div class="drug-tags">
+        ${drugs.map(d =>
+          `<span class="drug-tag selected">
+            ${d}
+            <span class="drug-tag-remove" onclick="App._removeDrug('${d.replace(/'/g, "\\'")}')">×</span>
+          </span>`
+        ).join('')}
+      </div>
+    `;
+  },
+
+  async _reanalyze() {
+    const statusDiv = document.getElementById('dna-status');
+    const results = State.get('results');
+    if (!results) return;
+
+    const p = State.get('profile');
+    const formData = new FormData();
+    formData.append('profile', JSON.stringify(p));
+
+    statusDiv.innerHTML = '<div class="loading-overlay"><div class="spinner"></div><div class="loading-text">Analysiere mit aktualisierten Daten...</div></div><div class="progress-bar"><div class="progress-fill" style="width:0%" id="progress-fill2"></div></div>';
+
+    try {
+      const newResults = await API.analyze(formData, (msg, pct) => {
+        const fill = document.getElementById('progress-fill2');
+        if (fill) fill.style.width = pct + '%';
+      });
+      State.set('results', newResults);
+      this._renderDnaStatus(newResults);
+      this._renderDnaResults(newResults);
+      statusDiv.innerHTML += '<div class="alert alert-success">✅ Analyse aktualisiert</div>';
+    } catch (err) {
+      statusDiv.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+    }
+  },
+
+  _renderDnaResults(results) {
+    const div = document.getElementById('dna-results');
+    if (!div) return;
+
+    const rp = results.risk_profile?.category_scores || {};
+    const sp = results.supplement_plan || [];
+    const drugWarnings = results.drug_warnings || [];
+
+    const topCategories = Object.entries(rp)
+      .sort((a, b) => (b[1]?.score || 0) - (a[1]?.score || 0))
+      .slice(0, 5);
+
+    div.innerHTML = `
+      <hr class="section-divider">
+      <div class="card">
+        <div class="card-title">📋 Analyse-Ergebnisse</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div>
+            <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Top-Kategorien</div>
+            ${topCategories.map(([cat, data]) => `
+              <div class="flex justify-between items-center" style="padding:4px 0">
+                <span style="font-size:13px">${cat}</span>
+                <span class="badge ${data.category === 'Erhöht' ? 'badge-high' : data.category === 'Moderat' ? 'badge-moderate' : 'badge-low'}">
+                  ${data.score != null ? data.score.toFixed(1) : '—'}/10 · ${data.category || '?'}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+          <div>
+            <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Top-Supplemente</div>
+            ${sp.slice(0, 5).map(s => `
+              <div class="flex justify-between items-center" style="padding:4px 0">
+                <span style="font-size:13px">${s.name || s.id}</span>
+                <span style="font-size:13px;color:var(--accent);font-weight:600">
+                  ${s.final_dose_mg || s.dose_mg || 0} mg
+                </span>
+              </div>
+            `).join('')}
+            ${drugWarnings.length > 0 ? `
+              <div class="text-sm mt-2" style="color:var(--yellow);font-weight:600">
+                ⚠️ ${drugWarnings.length} Medikamenten-Warnung(en)
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="App._renderPage('genome')">🧬 Genomen anzeigen</button>
+        <button class="btn" onclick="App._renderPage('supplements')">💊 Supplement-Plan</button>
+      </div>
+    `;
+  },
+
+  /* ================================================================
+     PAGE: BLOOD VALUES
+     ================================================================ */
+  _renderBloodPage() {
+    const body = document.getElementById('main-body');
+    const results = State.get('results');
+
+    // Known biomarkers for autocomplete
+    const knownBiomarkers = [
+      'Homocystein', 'Vitamin D (25-OH)', 'Vitamin B12', 'Ferritin',
+      'CRP', 'hs-CRP', 'Magnesium', 'Omega-3-Index', 'Zink', 'Selen',
+      'Glucose', 'HbA1c', 'TSH', 'Cortisol', 'LDL-Cholesterin',
+      'HDL-Cholesterin', 'Gesamt-Cholesterin', 'Triglyceride',
+      'Kreatinin', 'GFR', 'GPT (ALT)', 'GOT (AST)', 'Gamma-GT',
+      'Eisen', 'Transferrin-Sättigung', 'Harnstoff', 'Harnsäure',
+      'Calcium', 'Natrium', 'Kalium', 'Leukozyten', 'Hämoglobin',
+      'Thrombozyten', 'Vitamin B6', 'CoQ10',
+    ];
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-title">🩸 Blutwerte hochladen</div>
+        <div class="card-subtitle">CSV oder Excel mit Biomarker, Wert, Einheit</div>
+        <div class="file-upload" id="blood-dropzone">
+          <div class="file-upload-icon">🩸</div>
+          <div class="file-upload-text">Blutwert-Datei hier ablegen oder klicken</div>
+          <div class="file-upload-subtext">CSV (.csv) oder Excel (.xlsx)</div>
+          <input type="file" id="blood-file-input" accept=".csv,.xlsx" style="display:none">
+        </div>
+        <div id="blood-upload-status" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">✏️ Manuelle Eingabe</div>
+        <div class="card-subtitle">Einzelne Blutwerte direkt eintragen</div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;align-items:end">
+          <div class="form-group">
+            <label class="form-label">Biomarker</label>
+            <input type="text" class="form-input" id="manual-biomarker" list="biomarker-list" placeholder="z.B. Vitamin D">
+            <datalist id="biomarker-list">
+              ${knownBiomarkers.map(b => `<option value="${b}">`).join('')}
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Wert</label>
+            <input type="number" class="form-input" id="manual-value" step="any" placeholder="z.B. 42.5">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Einheit</label>
+            <input type="text" class="form-input" id="manual-unit" placeholder="z.B. ng/ml">
+          </div>
+          <div class="form-group">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-primary" id="btn-add-blood" style="width:100%">+ Hinzufügen</button>
+          </div>
+        </div>
+        <div id="manual-blood-list" style="margin-top:8px"></div>
+        <div id="manual-blood-actions" style="margin-top:8px;display:none">
+          <button class="btn btn-primary" id="btn-save-blood">💾 Speichern & Analysieren</button>
+          <button class="btn btn-sm" id="btn-clear-blood">Alle löschen</button>
+        </div>
+      </div>
+
+      <div id="blood-manual-status"></div>
+      <div id="blood-results"></div>
+      <div id="blood-history-section"></div>
+    `;
+
+    // File upload bindings
+    const dropzone = document.getElementById('blood-dropzone');
+    const input = document.getElementById('blood-file-input');
+
+    dropzone.addEventListener('click', () => input.click());
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) this._handleBloodFile(e.dataTransfer.files[0]);
+    });
+    input.addEventListener('change', () => {
+      if (input.files.length > 0) this._handleBloodFile(input.files[0]);
+    });
+
+    // Manual input bindings
+    document.getElementById('btn-add-blood').addEventListener('click', () => this._addManualBlood());
+    document.getElementById('manual-value').addEventListener('keydown', e => {
+      if (e.key === 'Enter') this._addManualBlood();
+    });
+    document.getElementById('manual-biomarker').addEventListener('change', () => this._autoFillUnit());
+    document.getElementById('manual-biomarker').addEventListener('input', () => this._autoFillUnit());
+
+    const btnSave = document.getElementById('btn-save-blood');
+    if (btnSave) btnSave.addEventListener('click', () => this._saveManualBlood());
+    const btnClear = document.getElementById('btn-clear-blood');
+    if (btnClear) btnClear.addEventListener('click', () => this._clearManualBlood());
+
+    // Init manual blood list
+    State.set('manualBloodList', []);
+    this._renderManualBloodList();
+
+    // Show existing blood results
+    if (results?.blood_results?.length > 0) {
+      this._renderBloodResults(results.blood_results);
+    }
+
+    // Show blood history
+    this._renderBloodHistory();
+  },
+
+  _autoFillUnit() {
+    const nameEl = document.getElementById('manual-biomarker');
+    const unitEl = document.getElementById('manual-unit');
+    const name = nameEl?.value?.trim().toLowerCase();
+    if (!name || !unitEl) return;
+
+    const unitMap = {
+      'homocystein': 'µmol/l',
+      'vitamin d': 'ng/ml',
+      'vitamin b12': 'pg/ml',
+      'ferritin': 'ng/ml',
+      'crp': 'mg/l',
+      'hs-crp': 'mg/l',
+      'magnesium': 'mmol/l',
+      'omega-3-index': '%',
+      'zink': 'µg/l',
+      'selen': 'µg/l',
+      'glucose': 'mg/dl',
+      'hba1c': '%',
+      'tsh': 'mU/l',
+      'cortisol': 'µg/dl',
+      'ldl-cholesterin': 'mg/dl',
+      'hdl-cholesterin': 'mg/dl',
+      'gesamt-cholesterin': 'mg/dl',
+      'triglyceride': 'mg/dl',
+      'kreatinin': 'mg/dl',
+      'gfr': 'ml/min',
+      'gpt': 'U/l',
+      'got': 'U/l',
+      'gamma-gt': 'U/l',
+      'eisen': 'µg/dl',
+      'transferrin-sättigung': '%',
+      'harnstoff': 'mg/dl',
+      'harnsäure': 'mg/dl',
+      'calcium': 'mmol/l',
+      'natrium': 'mmol/l',
+      'kalium': 'mmol/l',
+      'leukozyten': 'G/l',
+      'hämoglobin': 'g/dl',
+      'thrombozyten': 'G/l',
+      'coq10': 'mg/l',
+    };
+
+    for (const [key, unit] of Object.entries(unitMap)) {
+      if (name.includes(key)) {
+        unitEl.value = unit;
+        break;
+      }
+    }
+  },
+
+  _addManualBlood() {
+    const nameEl = document.getElementById('manual-biomarker');
+    const valueEl = document.getElementById('manual-value');
+    const unitEl = document.getElementById('manual-unit');
+
+    const name = nameEl?.value?.trim();
+    const value = parseFloat(valueEl?.value);
+    const unit = unitEl?.value?.trim() || '';
+
+    if (!name) {
+      this._showManualStatus('Bitte Biomarker eingeben', 'error');
+      return;
+    }
+    if (isNaN(value)) {
+      this._showManualStatus('Bitte gültigen Wert eingeben', 'error');
+      return;
+    }
+
+    const list = State.get('manualBloodList') || [];
+    // Check duplicate
+    const existing = list.find(i => i.name.toLowerCase() === name.toLowerCase());
+    if (existing) {
+      existing.value = value;
+      existing.unit = unit;
+    } else {
+      list.push({ name, value, unit });
+    }
+    State.set('manualBloodList', list);
+
+    // Clear inputs
+    nameEl.value = '';
+    valueEl.value = '';
+    unitEl.value = '';
+    nameEl.focus();
+
+    this._renderManualBloodList();
+    this._showManualStatus(`✅ ${name}: ${value} ${unit} hinzugefügt`, 'success');
+  },
+
+  _renderManualBloodList() {
+    const div = document.getElementById('manual-blood-list');
+    const actionsDiv = document.getElementById('manual-blood-actions');
+    const list = State.get('manualBloodList') || [];
+
+    if (!div) return;
+
+    if (list.length === 0) {
+      div.innerHTML = '<div class="text-xs" style="color:var(--text-muted)">Noch keine Werte eingegeben</div>';
+      if (actionsDiv) actionsDiv.style.display = 'none';
+      return;
+    }
+
+    if (actionsDiv) actionsDiv.style.display = 'block';
+
+    div.innerHTML = `
+      <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Ausstehende Werte (${list.length})</div>
+      <table class="score-table">
+        <thead><tr><th>Biomarker</th><th>Wert</th><th>Einheit</th><th></th></tr></thead>
+        <tbody>
+          ${list.map((item, i) => `
+            <tr>
+              <td style="font-weight:500">${item.name}</td>
+              <td>${item.value}</td>
+              <td>${item.unit}</td>
+              <td><span class="drug-tag-remove" onclick="App._removeManualBlood(${i})" style="cursor:pointer">×</span></td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  },
+
+  _removeManualBlood(index) {
+    const list = State.get('manualBloodList') || [];
+    list.splice(index, 1);
+    State.set('manualBloodList', list);
+    this._renderManualBloodList();
+  },
+
+  _clearManualBlood() {
+    State.set('manualBloodList', []);
+    this._renderManualBloodList();
+    this._showManualStatus('Eingaben gelöscht', 'info');
+  },
+
+  async _saveManualBlood() {
+    const list = State.get('manualBloodList') || [];
+    if (list.length === 0) {
+      this._showManualStatus('Keine Werte zum Speichern', 'error');
+      return;
+    }
+
+    // Convert to values dict for API
+    const values = {};
+    list.forEach(item => {
+      values[item.name.toLowerCase()] = {
+        value: item.value,
+        unit: item.unit,
+      };
+    });
+
+    try {
+      await API.bloodSnapshot(values);
+      this._showManualStatus(`✅ ${list.length} Blutwert(e) gespeichert. Analysiere neu...`, 'success');
+      State.set('manualBloodList', []);
+
+      // Re-analyze if DNA results exist
+      const results = State.get('results');
+      if (results) {
+        const p = State.get('profile');
+        const formData = new FormData();
+        const bloodBlob = new Blob(
+          ['Biomarker,Wert,Einheit\n' + list.map(i => `${i.name},${i.value},${i.unit}`).join('\n')],
+          { type: 'text/csv' }
+        );
+        formData.append('blood', bloodBlob, 'manual.csv');
+        formData.append('profile', JSON.stringify(p));
+
+        const newResults = await API.analyze(formData);
+        State.set('results', newResults);
+        this._renderBloodResults(newResults.blood_results || []);
+        this._renderBloodHistory();
+      }
+
+      this._renderManualBloodList();
+    } catch (err) {
+      this._showManualStatus(`❌ Fehler: ${err.message}`, 'error');
+    }
+  },
+
+  _showManualStatus(msg, type) {
+    const div = document.getElementById('blood-manual-status');
+    if (!div) return;
+    div.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    setTimeout(() => { if (div) div.innerHTML = ''; }, 3000);
+  },
+
+  async _handleBloodFile(file) {
+    const statusDiv = document.getElementById('blood-upload-status');
+    statusDiv.innerHTML = '<div class="alert alert-info">📄 Lade Blutwerte...</div>';
+
+    try {
+      const formData = new FormData();
+      formData.append('blood', file);
+      const result = await API.bloodUpload(formData);
+
+      statusDiv.innerHTML = `<div class="alert alert-success">✅ ${result.count} Biomarker geladen</div>`;
+
+      // Re-analyze with blood values
+      const results = State.get('results');
+      if (results) {
+        const p = State.get('profile');
+        const dnaFormData = new FormData();
+        dnaFormData.append('blood', file);
+        dnaFormData.append('profile', JSON.stringify(p));
+
+        statusDiv.innerHTML += '<div class="alert alert-info">🔄 Analysiere mit Blutwerten neu...</div>';
+        const newResults = await API.analyze(dnaFormData);
+        State.set('results', newResults);
+        this._renderBloodResults(newResults.blood_results || []);
+        this._renderBloodHistory();
+      }
+    } catch (err) {
+      statusDiv.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+    }
+  },
+
+  _renderBloodResults(bloodResults) {
+    const div = document.getElementById('blood-results');
+    if (!div || bloodResults.length === 0) {
+      if (div) div.innerHTML = '';
+      return;
+    }
+
+    div.innerHTML = `
+      <div class="card">
+        <div class="card-title">Aktuelle Blutwerte</div>
+        <table class="score-table">
+          <thead><tr>
+            <th>Biomarker</th>
+            <th>Wert</th>
+            <th>Status</th>
+            <th>Bewertung</th>
+          </tr></thead>
+          <tbody>
+            ${bloodResults.map(b => `
+              <tr>
+                <td style="font-weight:500">${b.name}</td>
+                <td>${b.value} ${b.unit}</td>
+                <td><span class="badge ${b.status === 'optimal' ? 'badge-low' : b.status === 'grenzwertig' ? 'badge-moderate' : 'badge-high'}">${b.status || 'unbekannt'}</span></td>
+                <td style="font-size:12px;color:var(--text-secondary)">${b.description || b.bewertung || ''}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="text-xs mt-2" style="color:var(--text-muted)">
+          Blutwerte fließen in die Supplement-Dosierung ein
+        </div>
+      </div>
+    `;
+  },
+
+  async _renderBloodHistory() {
+    const div = document.getElementById('blood-history-section');
+    if (!div) return;
+
+    try {
+      const data = await API.bloodHistory();
+      const history = data.history || [];
+
+      if (history.length === 0) {
+        div.innerHTML = `
+          <div class="card">
+            <div class="card-title">📈 Blutwert-Verlauf</div>
+            <div class="text-xs" style="color:var(--text-muted)">Noch keine Historie vorhanden</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Collect unique biomarkers
+      const biomarkers = new Set();
+      history.forEach(h => {
+        if (h.values) Object.keys(h.values).forEach(k => biomarkers.add(k));
+      });
+
+      div.innerHTML = `
+        <div class="card">
+          <div class="flex justify-between items-center mb-3">
+            <span class="card-title" style="margin-bottom:0">📈 Blutwert-Verlauf (${history.length} Messungen)</span>
+            <button class="btn btn-sm btn-danger" onclick="App._clearBloodHistory()">Historie löschen</button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px" id="biomarker-pills">
+            ${Array.from(biomarkers).map(b =>
+              `<span class="drug-tag" onclick="App._showBiomarkerTrend('${b.replace(/'/g, "\\'")}')">📈 ${b}</span>`
+            ).join('')}
+          </div>
+          <div id="biomarker-chart"></div>
+          <div id="biomarker-table"></div>
+        </div>
+      `;
+
+      // Show latest measurements
+      const latest = history[0]?.values || {};
+      const tableDiv = document.getElementById('biomarker-table');
+      if (Object.keys(latest).length > 0) {
+        tableDiv.innerHTML = `
+          <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Letzte Messung (${history[0].date || '?'})</div>
+          <table class="score-table">
+            <thead><tr><th>Biomarker</th><th>Wert</th><th>Einheit</th></tr></thead>
+            <tbody>
+              ${Object.entries(latest).map(([name, data]) =>
+                `<tr><td style="font-weight:500">${name}</td><td>${data.value}</td><td>${data.unit || ''}</td></tr>`
+              ).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+
+    } catch {
+      // ignore
+    }
+  },
+
+  async _showBiomarkerTrend(biomarker) {
+    try {
+      const data = await API.bloodHistory(biomarker);
+      const history = data.history || [];
+      const chartDiv = document.getElementById('biomarker-chart');
+      if (chartDiv) {
+        Charts.renderBloodTrend('biomarker-chart', history, biomarker);
+      }
+    } catch {
+      // ignore
+    }
+  },
+
+  async _clearBloodHistory() {
+    if (!confirm('Blutwert-Historie wirklich löschen?')) return;
+    try {
+      await API.bloodClear();
+      this._renderBloodHistory();
+    } catch {
+      // ignore
+    }
+  },
+
+  /* ================================================================
+     PAGE: RISK PROFILE
+     ================================================================ */
+  _renderProfilePage() {
+    const body = document.getElementById('main-body');
+    const results = State.get('results');
+
+    if (!results) {
+      body.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📈</div>
+          <div class="empty-state-title">Keine Analyse vorhanden</div>
+          <div class="empty-state-text">Führen Sie zuerst eine DNA-Analyse durch.</div>
+          <button class="btn btn-primary" onclick="App._renderPage('dna')">🧬 Zur DNA-Analyse</button>
+        </div>
+      `;
+      return;
+    }
+
+    const rp = results.risk_profile?.category_scores || {};
+    const ms = results.methylation_score || {};
+
+    const categoryExplanations = {
+      methylierung: 'MTHFR, COMT, MTR, BHMT — Folat-, B12- und Methylgruppen-Stoffwechsel',
+      fettstoffwechsel: 'FADS1/2, APOE, APOA5 — Omega-3, LDL, HDL, Triglyceride',
+      vitamin_stoffwechsel: 'VDR, GC, BCMO1 — Vitamin D, A, C, B6, B12',
+      entgiftung: 'CYP1A2, SOD2, GPX1, GSTP1 — Phase-1/2-Entgiftung, Antioxidantien',
+      entzuendung: 'TNF-a, IL6, CRP, CTLA4 — Zytokine, Immunregulation',
+      stoffwechsel: 'FTO, TCF7L2, ADRB2/3 — Kohlenhydrate, Energie, Gewicht',
+      sensitivitaet: 'LCT, HLA-DQ — Laktose, Gluten, Nahrungsmittel-Unvertrglichkeiten',
+      hormone: 'CYP19A1, SHBG, ESR1/2 — Hormonhaushalt, OEstrogen-Stoffwechsel',
+      knochen_gelenke: 'VDR, GC, COL1A1 — Knochendichte, Kollagen, Vitamin-D-Wirkung',
+      herz_kreislauf: 'ACE, NOS3, PON1, F2 — Blutdruck, Gerinnung, Gefaessfunktion',
+      sport_genetik: 'ACTN3, PPARGC1A, AMPD1 — Muskelfasertyp, Ausdauer, ATP-Regeneration',
+    };
+
+    const plainLang = {
+      methylierung: 'Ihr Methylierungs-Stoffwechsel ist wie eine Fabrik, die Schalter in Ihren Genen umlegt und wichtige Botenstoffe herstellt.',
+      fettstoffwechsel: 'Ihr Fettstoffwechsel bestimmt, wie gut Ihr Körper Omega-3-Fettsäuren umwandeln und Cholesterin transportieren kann.',
+      vitamin_stoffwechsel: 'Ihre Vitamin-Verwertung zeigt, wie effizient Ihr Körper Vitamine aus der Nahrung aufnimmt.',
+      entgiftung: 'Ihre Entgiftungsenzyme sind die Müllabfuhr Ihres Körpers.',
+      entzuendung: 'Entzündungs-Gene steuern, wie stark Ihr Körper auf Reize reagiert.',
+      stoffwechsel: 'Ihr Stoffwechsel-Typ zeigt, wie Ihr Körper mit Kohlenhydraten und Energie umgeht.',
+      sensitivitaet: 'Hier sehen Sie genetische Unverträglichkeiten für Laktose oder Gluten.',
+      hormone: 'Ihre Hormon-Gene beeinflussen, wie Ihr Körper Sexual- und Stresshormone verarbeitet.',
+      knochen_gelenke: 'Ihre Knochen- und Gelenk-Gene bestimmen Knochendichte und Bindegewebs-Reparatur.',
+      herz_kreislauf: 'Ihre Herz-Kreislauf-Gene beeinflussen Blutdruck, Gefäßelastizität und Gerinnung.',
+      sport_genetik: 'Ihre Sport-Gene verraten, ob Sie eher Kraft- oder Ausdauertyp sind.',
+    };
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-title">🧬 Genetischen Profil</div>
+        <div class="card-subtitle">
+          Score ${ms.score != null ? ms.score + '/10' : '—'} · ${ms.level || 'Unbekannt'} · ${results.expert ? 'Expert-Modus (606 SNPs)' : 'Standard (47 SNPs)'}
+        </div>
+        <div class="text-xs mb-2" style="color:var(--text-muted);padding:8px 0;border-bottom:1px solid var(--border-light)">
+          📊 <strong>So lesen Sie die Werte:</strong> Ein Wert von 0–10 zeigt an, wie stark ein Bereich genetisch gefordert ist.
+          <strong>Niedrig (≤3.5)</strong> = Ihr genetischer Standard ist gut, keine Extra-Unterstützung nötig.
+          <strong>Moderat (3.5–6.5)</strong> = leichte genetische Abweichung, Ihr Körper kann Extra-Hilfe brauchen.
+          <strong>Hoch (≥6.5)</strong> = stärkere genetische Besonderheit, hier lohnt sich gezielte Unterstützung besonders.<br>
+          <em>Klicken Sie auf eine Kategorie, um die einzelnen Gene und ihre Wirkung zu sehen.</em>
+        </div>
+
+        <div id="radar-chart" style="width:100%"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📊 Kategorien-Scores</div>
+        <div class="text-xs mb-3" style="color:var(--text-muted)">
+          🟢 ≤3.5 Niedrig · 🟡 3.5–6.5 Moderat · 🔴 ≥6.5 Erhöht
+        </div>
+        <table class="score-table">
+          <thead><tr>
+            <th>Kategorie</th>
+            <th>Score</th>
+            <th>Risiko</th>
+            <th>SNPs</th>
+            <th>Gene</th>
+          </tr></thead>
+          <tbody>
+            ${Object.entries(rp)
+              .sort((a, b) => (b[1]?.score || 0) - (a[1]?.score || 0))
+              .map(([cat, data]) => {
+                const catId = 'snp-detail-' + cat.replace(/_/g, '-');
+                const snps = data.contributing_snps || [];
+                return `
+                <tr style="cursor:pointer" onclick="App._toggleSnpDetail('${catId}')">
+                  <td style="font-weight:500">${this._catLabel(cat)}</td>
+                  <td><span class="${this._scoreClass(data.score || 0)}">${data.score != null ? data.score.toFixed(1) : '—'}</span></td>
+                  <td><span class="badge ${data.category === 'Erhöht' ? 'badge-high' : data.category === 'Moderat' ? 'badge-moderate' : 'badge-low'}">${data.category || '?'}</span></td>
+                  <td style="font-size:12px">${data.tested_snps || 0}/${(data.tested_snps || 0) + (data.missing_snps || 0)}</td>
+                  <td style="font-size:12px;color:var(--text-muted)">${data.genes?.slice(0, 4).join(', ') || ''}</td>
+                </tr>
+                <tr id="${catId}" style="display:none">
+                  <td colspan="5" style="padding:0">
+                    <div style="background:var(--bg-tertiary);padding:12px 16px;border-radius:4px;margin:4px 0">
+                      ${this._plainLangForCat(cat, plainLang)}
+                      ${snps.length > 0 ? `
+                        <div style="margin-top:10px">
+                          ${snps.map(s => `
+                            <div style="padding:8px 0;border-bottom:1px solid var(--border-light)">
+                              <div style="font-weight:600;font-size:13px;color:var(--text-primary)">
+                                ${s.gene || s.rsid} (${s.rsid})
+                                <span class="${this._scoreClass((s.raw_score || 0) * 10)}" style="font-size:11px;margin-left:8px">
+                                  ${s.risk_count != null ? s.risk_count + ' Risiko-Allele' : '—'}
+                                </span>
+                              </div>
+                              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${s.description || ''}</div>
+                              ${s.effect ? `<div style="font-size:11px;color:var(--text-muted);margin-top:2px">🧬 Wirkung: ${this._effectLabel(s.effect)}</div>` : ''}
+                              ${s.recommendation ? `<div style="font-size:11px;color:var(--accent);margin-top:2px">💡 ${s.recommendation}</div>` : ''}
+                            </div>
+                          `).join('')}
+                        </div>
+                      ` : '<div class="text-xs" style="color:var(--text-muted)">Keine SNP-Details verfügbar</div>'}
+                    </div>
+                  </td>
+                </tr>`;
+              }).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      ${results.risk_profile?.interactions?.length > 0 ? `
+      <div class="card">
+        <div class="card-title">🔄 SNP-Interaktionen (Epistasis)</div>
+        ${results.risk_profile.interactions.map(i => `
+          <div class="supplement-card">
+            <div class="supplement-name">${i.gene_a} + ${i.gene_b}</div>
+            <div class="supplement-detail">${i.description} — Faktor: ×${i.factor}</div>
+          </div>
+        `).join('')}
+      </div>` : ''}
+    `;
+
+    setTimeout(() => {
+      Charts.renderRadar('radar-chart', rp, categoryExplanations, plainLang);
+    }, 50);
+  },
+
+  /* ================================================================
+     PAGE: SUPPLEMENTS
+     ================================================================ */
+  _renderSupplementsPage() {
+    const body = document.getElementById('main-body');
+    const results = State.get('results');
+
+    if (!results || !results.supplement_plan) {
+      body.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">💊</div>
+          <div class="empty-state-title">Keine Supplement-Empfehlungen</div>
+          <div class="empty-state-text">Führen Sie zuerst eine DNA-Analyse durch.</div>
+          <button class="btn btn-primary" onclick="App._renderPage('dna')">🧬 Zur DNA-Analyse</button>
+        </div>
+      `;
+      return;
+    }
+
+    const sp = results.supplement_plan || [];
+    const high = sp.filter(s => s.risk_level === 'hoch');
+    const medium = sp.filter(s => s.risk_level === 'mittel');
+    const low = sp.filter(s => s.risk_level === 'niedrig');
+    const p = State.get('profile');
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="flex justify-between items-center mb-3">
+          <span class="card-title" style="margin-bottom:0">👤 Profil</span>
+          <span class="text-xs" style="color:var(--text-muted)">Beeinflusst Supplement-Dosierung</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Alter (Jahre)</label>
+            <input type="number" class="form-input" id="supp-profile-age" value="${p.age}" min="1" max="120">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Gewicht (kg)</label>
+            <input type="number" class="form-input" id="supp-profile-weight" value="${p.weight}" min="20" max="300">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Geschlecht</label>
+            <select class="form-select" id="supp-profile-gender">
+              <option value="m" ${p.gender === 'm' ? 'selected' : ''}>Männlich</option>
+              <option value="w" ${p.gender === 'w' ? 'selected' : ''}>Weiblich</option>
+              <option value="d" ${p.gender === 'd' ? 'selected' : ''}>Divers</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <button class="btn btn-primary" id="btn-update-supplements" style="white-space:nowrap">📊 Aktualisieren</button>
+          </div>
+        </div>
+        <div id="supp-update-status" style="margin-top:8px"></div>
+      </div>
+
+      ${high.length > 0 ? `
+      <div class="card">
+        <div class="card-title">🔴 Hohe Priorität</div>
+        ${high.map(s => this._supplementCard(s)).join('')}
+      </div>` : ''}
+
+      ${medium.length > 0 ? `
+      <div class="card">
+        <div class="card-title">🟡 Mittlere Priorität</div>
+        ${medium.map(s => this._supplementCard(s)).join('')}
+      </div>` : ''}
+
+      ${low.length > 0 ? `
+      <div class="card">
+        <div class="card-title">🟢 Niedrige Priorität</div>
+        ${low.map(s => this._supplementCard(s)).join('')}
+      </div>` : ''}
+
+      <div class="card">
+        <div class="card-title">📊 Details zur Dosierung</div>
+        <div class="text-xs" style="color:var(--text-muted)">
+          <p>1. Genetische Anpassung: Gene mit Risiko ≥0.5 → Dosis-Bonus</p>
+          <p>2. Gewichtsfaktor: +200 mg pro 20 kg</p>
+          <p>3. Blutwert-Anpassung: z.B. Omega-3-Index &lt;8% → ×1.5</p>
+          <p>4. Methylierungs-Score: +30% bei Score &gt;5</p>
+          <p>5. Medikamenten-Interaktionen: Dosis-Begrenzung bei Kontraindikation</p>
+          <p>6. SNP-Synergien (Epistasis): ×1.0 + (Synergie/20)</p>
+          <p>7. Geschlechtsfaktor: Frauen mehr DHA, Männer mehr EPA</p>
+          <p>8. Altersfaktor: supplement-spezifische Anpassungen</p>
+        </div>
+      </div>
+    `;
+
+    // ── Profile bindings on supplements page ──
+    const ageEl = document.getElementById('supp-profile-age');
+    const weightEl = document.getElementById('supp-profile-weight');
+    const genderEl = document.getElementById('supp-profile-gender');
+    const updateBtn = document.getElementById('btn-update-supplements');
+
+    if (ageEl) ageEl.addEventListener('change', e => {
+      const p = State.get('profile');
+      p.age = parseInt(e.target.value) || 35;
+      State.set('profile', p);
+    });
+    if (weightEl) weightEl.addEventListener('change', e => {
+      const p = State.get('profile');
+      p.weight = parseInt(e.target.value) || 75;
+      State.set('profile', p);
+    });
+    if (genderEl) genderEl.addEventListener('change', e => {
+      const p = State.get('profile');
+      p.gender = e.target.value;
+      State.set('profile', p);
+    });
+    if (updateBtn) updateBtn.addEventListener('click', () => this._updateSupplements());
+  },
+
+  async _updateSupplements() {
+    const statusDiv = document.getElementById('supp-update-status');
+    const results = State.get('results');
+    if (!results) return;
+
+    statusDiv.innerHTML = '<div class="alert alert-info">🔄 Berechne Supplemente neu...</div>';
+
+    try {
+      const p = State.get('profile');
+      const formData = new FormData();
+      formData.append('profile', JSON.stringify(p));
+
+      const newResults = await API.analyze(formData);
+      State.set('results', newResults);
+
+      statusDiv.innerHTML = '<div class="alert alert-success">✅ Supplemente aktualisiert</div>';
+      // Re-render the whole page
+      this._renderSupplementsPage();
+    } catch (err) {
+      statusDiv.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+    }
+  },
+
+  _supplementCard(s) {
+    const dose = s.final_dose_mg || s.dose_mg || 0;
+    const riskLevel = s.risk_level || 'niedrig';
+    const badgeClass = riskLevel === 'hoch' ? 'badge-high' : riskLevel === 'mittel' ? 'badge-moderate' : 'badge-low';
+    const badgeLabel = riskLevel === 'hoch' ? '🔴 Hoch' : riskLevel === 'mittel' ? '🟡 Mittel' : '🟢 Niedrig';
+    const reasons = s.reasons || [];
+    const epaDha = s.epa_dha;
+    const interactions = (s.interactions || []).map(i => this._translateInteraction(i));
+
+    return `
+      <div class="supplement-card">
+        <div class="flex justify-between items-center">
+          <div class="supplement-name">${s.name || s.id}
+            <span class="badge ${badgeClass}" style="margin-left:8px">${badgeLabel}</span>
+          </div>
+        </div>
+        <div class="supplement-dose">${dose}<span class="supplement-dose-unit"> ${s.unit || 'mg'}/Tag</span></div>
+        ${epaDha ? `
+          <div class="supplement-detail" style="color:var(--accent);font-weight:500;margin-top:4px">
+            EPA: ${epaDha.epa} mg · DHA: ${epaDha.dha} mg
+          </div>
+        ` : ''}
+        ${reasons.length > 0 ? `
+          <div style="margin-top:8px">
+            <div class="text-xs" style="color:var(--text-muted);font-weight:600;margin-bottom:4px">📐 Berechnung:</div>
+            ${reasons.map(r => `
+              <div class="text-xs" style="color:var(--text-secondary);padding:2px 0;border-bottom:1px solid var(--border-light)">${r}</div>
+            `).join('')}
+          </div>
+        ` : ''}
+        ${s.base_note ? `<div class="supplement-detail">${s.base_note}</div>` : ''}
+        ${s.preferred_form ? `<div class="supplement-form">Empfohlen: ${s.preferred_form}</div>` : ''}
+        ${s.safety ? `<div class="supplement-detail" style="color:var(--yellow);margin-top:4px">⚠️ ${s.safety}</div>` : ''}
+        ${interactions.length > 0 ? `
+          <div style="margin-top:10px">
+            <div class="text-xs" style="color:var(--text-muted);font-weight:600;margin-bottom:4px">⚡ Wechselwirkungen mit anderen Nährstoffen:</div>
+            ${interactions.map(i => `
+              <div class="text-xs" style="color:var(--text-secondary);padding:4px 0;border-bottom:1px solid var(--border-light)">${i}</div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  },
+
+  _translateInteraction(interaction) {
+    const plain = {
+      'Vitamin E (als Schutz vor Oxidation)':
+        'Vitamin E: Omega-3-Fettsäuren sind empfindlich gegenüber Oxidation. Vitamin E schützt sie im Körper vor dem Verderben — ähnlich wie ein Schutzumschlag.',
+      'Vitamin D3 (erhoeht Mg-Bedarf)':
+        'Vitamin D3: Ihr Körper braucht Magnesium, um Vitamin D überhaupt aktivieren zu können. Wenn Sie Vitamin D nehmen, verbrauchen Sie mehr Magnesium — der Bedarf steigt.',
+      'Zink (kompetitive Aufnahme)':
+        'Zink: Magnesium und Zink konkurrieren im Darm um die gleichen Aufnahme-Wege. Am besten zeitlich getrennt einnehmen (z.B. Magnesium morgens, Zink abends), damit beide gut ankommen.',
+      'Magnesium (fuer D3-Aktivierung noetig)':
+        'Magnesium: Vitamin D kann ohne Magnesium nicht in seine aktive Form umgewandelt werden. Magnesium ist sozusagen der Zündfunke für Vitamin D.',
+      'K2 (lenkt Calcium in Knochen)':
+        'Vitamin K2: Es sorgt dafür, dass das Calcium aus dem Vitamin D nicht in den Arterien landet, sondern in die Knochen eingebaut wird — quasi der Lotse für Calcium.',
+      'Vitamin B12 (Methylcobalamin)':
+        'Vitamin B12: 5-MTHF und B12 arbeiten im Methylzyklus als Team. B12 ist der Partner, der die Methylgruppen weiterreicht. Beide zusammen sind wirksamer.',
+      'Betain/Cholin':
+        'Betain/Cholin: Wenn der 5-MTHF-Weg nicht optimal läuft, springt Betain/Cholin als alternativer Methyl-Lieferant ein — ein zweiter Weg zum gleichen Ziel.',
+      'Vitamin C (erhoeht Eisenaufnahme)':
+        'Vitamin C: Es macht Eisen besser verfügbar, indem es dreiwertiges Eisen in zweiwertiges umwandelt — das kann der Darm viel besser aufnehmen. Bis zu 3x mehr Eisen gelangt so ins Blut.',
+      'Calcium (kompetitive Aufnahme)':
+        'Calcium: Eisen und Calcium stören sich gegenseitig bei der Aufnahme im Darm. Am besten mit zeitlichem Abstand einnehmen (2–3 Stunden).',
+      'Kupfer (Zink ueberschreitet aufnahme)':
+        'Kupfer: Viel Zink über längere Zeit kann die Kupfer-Aufnahme blockieren. Bei Zink über 25 mg/Tag sollte gelegentlich auch Kupfer mit aufgenommen werden.',
+      'Curcumin (verbessert Bioverfuegbarkeit)':
+        'Curcumin: Ein natürlicher Verstärker für Omega-3 — Curcumin und Omega-3 wirken zusammen besser gegen Entzündungen als jedes allein.',
+      'Vitamin K2 (lenkt Calcium in Knochen)':
+        'Vitamin K2: Es leitet das Calcium aus dem Blutkreislauf in die Knochen um. Ohne K2 könnte Calcium in den Arterien landen statt dort, wo es gebraucht wird.',
+      'Vitamin D (verbessert Calciumaufnahme)':
+        'Vitamin D: Es öffnet sozusagen die Tür für Calcium im Darm — ohne Vitamin D wird Calcium kaum aufgenommen, egal wie viel Sie essen.',
+      'CoQ10 (mit fettloeslicher Mahraei)':
+        'CoQ10: Da CoQ10 fettlöslich ist, nehmen Sie es am besten mit einer Mahlzeit ein, die etwas Fett enthält. Das steigert die Aufnahme um ein Vielfaches.',
+      'Vitamin B-Komplex (synergistische Wirkung)':
+        'B-Vitamine: Alle B-Vitamine arbeiten im Energiestoffwechsel zusammen. Fehlt eines, können die anderen nicht richtig arbeiten — ein gut eingestelltes Team.',
+      'Vitamin D (unterstuetzt Calciumeinbau)':
+        'Vitamin D: Es befördert Calcium aus dem Darm ins Blut. Erst mit genug Vitamin D kann Calcium überhaupt dorthin gelangen, wo es gebraucht wird.',
+      'Omega-3 (unterstuetzt Aufnahme)':
+        'Omega-3: Vitamin D und K2 sind fettlöslich — sie brauchen Fett, um vom Darm aufgenommen zu werden. Omega-3-Fettsäuren liefern dieses Fett gleich mit.',
+    };
+    return plain[interaction] || interaction;
+  },
+
+  /* ================================================================
+     PAGE: MEDICATIONS INPUT (unter DATEN)
+     ================================================================ */
+  _renderMedicationsInputPage() {
+    const body = document.getElementById('main-body');
+    const p = State.get('profile');
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-title">💊 Medikamente verwalten</div>
+        <div class="card-subtitle">Wählen Sie Ihre Medikamente für die CYP450-Interaktionsprüfung (Verträglichkeit)</div>
+
+        <div class="form-group">
+          <label class="form-label">Eingenommene Medikamente</label>
+          <div id="med-drug-tags"></div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <input type="text" class="form-input" id="med-drug-search-input" placeholder="Medikament suchen... (z.B. Omeprazol, Metformin, Warfarin)" style="flex:1">
+            <button class="btn btn-sm" id="med-drug-search-btn">Suchen</button>
+          </div>
+          <div id="med-drug-search-results" style="margin-top:8px"></div>
+        </div>
+
+        <hr class="section-divider">
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-med-save">💾 Speichern & Analyse aktualisieren</button>
+          <button class="btn" onclick="App._renderPage('tolerance')">💉 Zur Verträglichkeit</button>
+        </div>
+        <div id="med-save-status" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ℹ️ Verfügbare Medikamente in der Datenbank</div>
+        <div class="text-sm" style="color:var(--text-secondary)">
+          CYP2D6, CYP2C19, CYP1A2, CYP3A4, CYP2C9 — 19 Medikamente mit CPIC-Level-A-Evidenz
+        </div>
+        <div class="text-xs mt-2" style="color:var(--text-muted)">
+          Nach dem Speichern werden Supplement-Dosierungen und Verträglichkeits-Warnungen automatisch aktualisiert.
+        </div>
+      </div>
+    `;
+
+    // Bind drug search
+    document.getElementById('med-drug-search-btn').addEventListener('click', () => this._medDrugSearch());
+    document.getElementById('med-drug-search-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') this._medDrugSearch();
+    });
+
+    // Bind save
+    document.getElementById('btn-med-save').addEventListener('click', () => this._medSaveDrugs());
+
+    // Show selected drugs
+    this._renderMedDrugTags();
+  },
+
+  _medDrugSearch() {
+    const input = document.getElementById('med-drug-search-input');
+    const q = input.value.trim();
+    if (!q) return;
+
+    API.drugSearch(q).then(data => {
+      const resultsDiv = document.getElementById('med-drug-search-results');
+      if (data.results?.length > 0) {
+        resultsDiv.innerHTML = `
+          <div class="drug-tags">
+            ${data.results.map(d =>
+              `<span class="drug-tag" onclick="App._medAddDrug('${d.replace(/'/g, "\\'")}')">+ ${d}</span>`
+            ).join('')}
+          </div>
+        `;
+      } else {
+        resultsDiv.innerHTML = '<div class="text-xs" style="color:var(--text-muted)">Keine Treffer</div>';
+      }
+    }).catch(() => {});
+  },
+
+  _medAddDrug(name) {
+    const p = State.get('profile');
+    if (!p.drugs.includes(name)) {
+      p.drugs.push(name);
+      State.set('profile', p);
+    }
+    this._renderMedDrugTags();
+    document.getElementById('med-drug-search-results').innerHTML = '';
+    document.getElementById('med-drug-search-input').value = '';
+  },
+
+  _medRemoveDrug(name) {
+    const p = State.get('profile');
+    p.drugs = p.drugs.filter(d => d !== name);
+    State.set('profile', p);
+    this._renderMedDrugTags();
+  },
+
+  _renderMedDrugTags() {
+    const div = document.getElementById('med-drug-tags');
+    if (!div) return;
+    const drugs = State.get('profile').drugs || [];
+    if (drugs.length === 0) {
+      div.innerHTML = '<div class="text-xs" style="color:var(--text-muted)">Keine Medikamente ausgewählt — suchen und hinzufügen</div>';
+      return;
+    }
+    div.innerHTML = `
+      <div class="drug-tags">
+        ${drugs.map(d =>
+          `<span class="drug-tag selected">
+            ${d}
+            <span class="drug-tag-remove" onclick="App._medRemoveDrug('${d.replace(/'/g, "\\'")}')">×</span>
+          </span>`
+        ).join('')}
+      </div>
+    `;
+  },
+
+  async _medSaveDrugs() {
+    const statusDiv = document.getElementById('med-save-status');
+    const results = State.get('results');
+
+    statusDiv.innerHTML = '<div class="alert alert-info">💾 Speichere & analysiere neu...</div>';
+
+    try {
+      const p = State.get('profile');
+      const formData = new FormData();
+      formData.append('profile', JSON.stringify(p));
+
+      const newResults = await API.analyze(formData);
+      State.set('results', newResults);
+
+      const drugCount = p.drugs?.length || 0;
+      const warnCount = newResults.drug_warnings?.length || 0;
+      statusDiv.innerHTML = `<div class="alert alert-success">✅ ${drugCount} Medikamente gespeichert · ${warnCount} Warnungen gefunden · Analyse aktualisiert</div>`;
+
+      // Offer link to tolerance page
+      statusDiv.innerHTML += `<div style="margin-top:8px"><button class="btn btn-sm" onclick="App._renderPage('tolerance')">💉 Verträglichkeit anzeigen</button></div>`;
+    } catch (err) {
+      statusDiv.innerHTML = `<div class="alert alert-error">❌ ${err.message}</div>`;
+    }
+  },
+
+  /* ================================================================
+     PAGE: TOLERANCE (Verträglichkeit — renamed old medications)
+     ================================================================ */
+  _renderTolerancePage() {
+    const body = document.getElementById('main-body');
+    const results = State.get('results');
+
+    if (!results) {
+      body.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">💉</div>
+          <div class="empty-state-title">Keine Medikamenten-Daten</div>
+          <div class="empty-state-text">Führen Sie zuerst eine DNA-Analyse durch.</div>
+          <button class="btn btn-primary" onclick="App._renderPage('dna')">🧬 Zur DNA-Analyse</button>
+        </div>
+      `;
+      return;
+    }
+
+    const drugWarnings = results.drug_warnings || [];
+    const phenotypes = results.phenotypes || {};
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-title">💉 Verträglichkeit (CYP450)</div>
+        <div class="card-subtitle">Medikamenten-Verträglichkeit basierend auf Ihren CYP-Genvarianten</div>
+
+        ${Object.keys(phenotypes).length > 0 ? `
+          <div class="mb-4">
+            <div class="text-sm mb-2" style="color:var(--text-secondary);font-weight:600">Ihr CYP-Profil</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${Object.entries(phenotypes).map(([gene, pheno]) => `
+                <span class="drug-tag" style="background:var(--bg-tertiary);padding:6px 12px">
+                  <strong>${gene}</strong>: ${pheno.phenotype || pheno}
+                </span>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚠️ Warnungen & Interaktionen</div>
+        ${drugWarnings.length > 0 ? drugWarnings.map(w => `
+          <div class="drug-warning ${w.severity || 'verringert'}">
+            <div class="drug-warning-name">${w.drug || w.medikament} ${w.severity === 'erhoeht' ? '🔴' : w.severity === 'positiv' ? '🟢' : '🟡'}</div>
+            <div class="drug-warning-desc">${w.description || w.effekt || w.warning || ''}</div>
+            ${w.recommendation || w.empfehlung ? `<div class="drug-warning-desc" style="margin-top:2px">💡 ${w.recommendation || w.empfehlung}</div>` : ''}
+          </div>
+        `).join('') : `
+          <div class="text-xs" style="color:var(--text-muted);padding:12px 0">
+            Keine Medikamenten-Warnungen. Fügen Sie Medikamente unter "Medikamente" in Daten hinzu.
+          </div>
+        `}
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="App._renderPage('medications')">💊 Medikamente verwalten</button>
+      </div>
+    `;
+  },
+
+  /* ================================================================
+     PAGE: EXPORT
+     ================================================================ */
+  _renderExportPage() {
+    const body = document.getElementById('main-body');
+    const results = State.get('results');
+
+    if (!results) {
+      body.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state-icon">📄</div>
+          <div class="empty-state-title">Kein Report verfügbar</div>
+          <div class="empty-state-text">Führen Sie zuerst eine Analyse durch.</div>
+          <button class="btn btn-primary" onclick="App._renderPage('dna')">🧬 Zur DNA-Analyse</button>
+        </div>
+      `;
+      return;
+    }
+
+    body.innerHTML = `
+      <div class="card">
+        <div class="card-title">📄 Report-Export</div>
+        <div class="card-subtitle">Exportieren Sie Ihre Analyse als PDF oder Markdown</div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-export-pdf">
+            📄 PDF-Report herunterladen
+          </button>
+          <button class="btn" id="btn-export-markdown">
+            📝 Markdown anzeigen
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="markdown-preview" style="display:none">
+        <div class="card-title">📝 Markdown-Report</div>
+        <pre style="background:var(--bg-tertiary);padding:16px;border-radius:var(--radius);font-size:12px;overflow-x:auto;white-space:pre-wrap;color:var(--text-secondary);max-height:500px;overflow-y:auto">${results.markdown_report || ''}</pre>
+      </div>
+    `;
+
+    document.getElementById('btn-export-pdf').addEventListener('click', () => {
+      this._exportPdf(results);
+    });
+
+    document.getElementById('btn-export-markdown').addEventListener('click', () => {
+      const preview = document.getElementById('markdown-preview');
+      preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+    });
+  },
+
+  async _exportPdf(results) {
+    try {
+      const p = State.get('profile');
+      await API.exportPdf({
+        risk_profile: results.risk_profile,
+        methylation_score: results.methylation_score,
+        supplement_plan: results.supplement_plan,
+        blood_results: results.blood_results,
+        profile: p,
+      });
+    } catch (err) {
+      alert('PDF-Export fehlgeschlagen: ' + err.message);
+    }
+  },
+
+  /* ================================================================
+     HELPERS
+     ================================================================ */
+  _scoreClass(score) {
+    if (score == null) return '';
+    if (score >= 6.5) return 'score-high';
+    if (score >= 3.5) return 'score-moderate';
+    return 'score-low';
+  },
+
+  _catLabel(cat) {
+    const labels = {
+      methylierung: 'Methylierung',
+      fettstoffwechsel: 'Fettstoffwechsel',
+      vitamin_stoffwechsel: 'Vitamin-Stoffwechsel',
+      entgiftung: 'Entgiftung',
+      entzuendung: 'Entzündung',
+      stoffwechsel: 'Stoffwechsel',
+      sensitivitaet: 'Sensitivität',
+      hormone: 'Hormone',
+      knochen_gelenke: 'Knochen & Gelenke',
+      herz_kreislauf: 'Herz & Kreislauf',
+      sport_genetik: 'Sport-Genetik',
+    };
+    return labels[cat] || cat;
+  },
+
+  _toggleSnpDetail(id) {
+    const row = document.getElementById(id);
+    if (row) {
+      row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    }
+  },
+
+  _plainLangForCat(cat, plainLang) {
+    const text = plainLang[cat];
+    if (text) {
+      return `<div class="text-xs" style="color:var(--text-secondary);line-height:1.6;margin-bottom:8px">${text}</div>`;
+    }
+    return '';
+  },
+
+  _effectLabel(effect) {
+    const labels = {
+      'verringerte_Folat_Umwandlung': 'Reduzierte Folat-Umwandlung — der Körper kann Folsäure schlechter in die aktive Form umwandeln',
+      'verringerte_LC_PUFA_Synthese': 'Reduzierte Omega-3-Eigenproduktion — langkettige Fettsäuren werden schlechter hergestellt',
+      'veraenderte_Omega6_Omega3_Ratio': 'Verschobenes Omega-6/3-Verhältnis — der Körper baut bevorzugt entzündungsfördernde Omega-6 ein',
+      'verringerte_VitaminD_Aufnahme': 'Reduzierte Vitamin-D-Aufnahme — der Vitamin-D-Rezeptor arbeitet weniger effizient',
+      'verringerte_B12_Regeneration': 'Verlangsamtes B12-Recycling — Vitamin B12 wird schlechter wiederverwertet',
+      'erhoehtes_Homocystein_Risiko': 'Erhöhtes Homocystein-Risiko — der Methyl-Stoffwechsel ist weniger effizient',
+      'veraenderter_Betain_Stoffwechsel': 'Veränderter Betain-Stoffwechsel — der alternative Methyl-Weg ist beeinträchtigt',
+      'verringerte_Phosphatidylcholin_Synthese': 'Reduzierte Cholin-Eigenproduktion — der Körper kann weniger Cholin selbst herstellen',
+      'verringerte_Entgiftung': 'Reduzierte Entgiftungskapazität — Giftstoffe werden langsamer abgebaut',
+      'erhoehter_oxidativer_Stress': 'Erhöhter oxidativer Stress — die Zellen sind anfälliger für freie Radikale',
+      'erhoehte_Entzuendungsneigung': 'Erhöhte Entzündungsneigung — das Immunsystem reagiert stärker auf Reize',
+      'verringerte_Insulin_Sensitivitaet': 'Reduzierte Insulin-Empfindlichkeit — der Zuckerstoffwechsel ist weniger effizient',
+      'Laktase_Nicht_Persistenz': 'Laktase-Mangel — Milchzucker kann nach dem Kindesalter schlechter verdaut werden',
+      'Zoeliakie_Risiko': 'Zöliakie-Risiko — erhöhte Wahrscheinlichkeit für Gluten-Unverträglichkeit',
+      'Kraft_und_Schnellkraft': 'Kraft- und Schnellkraft-Typ — die Muskulatur ist auf explosive Bewegungen ausgelegt',
+      'Ausdauer_Typ': 'Ausdauer-Typ — die Muskulatur ist auf langanhaltende Belastung ausgelegt',
+      'erhoehtes_Blutdruckrisiko': 'Erhöhtes Blutdruck-Risiko — das Gefäßsystem reagiert empfindlicher',
+      'verringerte_Knochendichte': 'Reduzierte Knochendichte — der Knochen-Stoffwechsel ist weniger effizient',
+    };
+    return labels[effect] || effect.replace(/_/g, ' ');
+  },
+};
+
+// ── Bootstrap ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => App.init());

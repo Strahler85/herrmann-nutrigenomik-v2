@@ -1,0 +1,681 @@
+[
+  {
+    "name": "Omega-3 (EPA/DHA)",
+    "id": "omega3",
+    "category": "fettstoffwechsel",
+    "base_dose_mg": 1000,
+    "base_note": "1 g/Tag EPA+DHA (250 mg fuer Herz-Kreislauf, 2-4 g therapeutisch). EPA: entzuendungshemmend, DHA: Gehirn/Augen/Schwangerschaft.",
+    "unit": "mg",
+    "max_daily_mg": 4000,
+    "genes": [
+      "FADS1",
+      "FADS2",
+      "ELOVL2",
+      "APOE"
+    ],
+    "weight_factor_per_20kg": 200,
+    "gender_factors": {
+      "m": 1.0,
+      "w": 1.1,
+      "d": 1.05
+    },
+    "age_adjustments": [
+      {
+        "min": 65,
+        "factor": 1.2,
+        "reason": "Reduzierte DHA-Synthese im Alter (>65)"
+      }
+    ],
+    "blood_markers": {
+      "omega-3-index": {
+        "optimal": [
+          8,
+          12
+        ],
+        "low_dose_mult": 1.5,
+        "high_dose_mult": 0.5,
+        "adjustment": "Omega-3-Index <8% -> Dosis erhoehen; >12% -> reduzieren"
+      }
+    },
+    "interactions": [
+      "Vitamin E (als Schutz vor Oxidation)"
+    ],
+    "safety": "Antikoagulantien-Effekt bei >3 g/Tag. Bei Blutverdunnung Arzt konsultieren. Maximal 4 g/Tag ohne Aufsicht.",
+    "forms": [
+      "Fischoel (EE)",
+      "Triglyceridform",
+      "Algenoel (vegan)"
+    ],
+    "preferred_form": "Triglyceridform (bessere Bioverfuegbarkeit, 30-50% hoehere Absorption als EE)",
+    "gender_dha_ratio": {
+      "m": 0.3,
+      "w": 0.5,
+      "d": 0.4
+    }
+  },
+  {
+    "name": "Magnesium",
+    "id": "magnesium",
+    "category": "methylierung",
+    "base_dose_mg": 200,
+    "base_note": "200-300 mg/Tag (NIH: RDA 310-420 mg, UL Supplement: 350 mg)",
+    "unit": "mg",
+    "max_daily_mg": 450,
+    "genes": [
+      "MTHFR",
+      "COMT",
+      "SOD2"
+    ],
+    "gene_bonus_mg": 30,
+    "weight_factor_mg_per_kg": 3,
+    "weight_max_mg": 150,
+    "gender_factors": {
+      "m": 1.15,
+      "w": 1.0,
+      "d": 1.1
+    },
+    "age_adjustments": [
+      {
+        "min": 65,
+        "factor": 1.1,
+        "reason": "Verminderte Mg-Resorption im Alter"
+      }
+    ],
+    "blood_markers": {
+      "magnesium": {
+        "optimal": [
+          0.85,
+          1.1
+        ],
+        "low_dose_mult": 1.3,
+        "high_dose_mult": 0.7,
+        "adjustment": "Magnesium <0.85 mmol/l -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Vitamin D3 (erhoeht Mg-Bedarf)",
+      "Zink (kompetitive Aufnahme)"
+    ],
+    "safety": "UL 350 mg/Tag aus Supplementen. >450 mg -> Durchfallrisiko. Bei Niereninsuffizienz (GFR <30) nicht ohne aerztliche Aufsicht.",
+    "forms": [
+      "Magnesiumcitrat",
+      "Magnesiumbisglycinat",
+      "Magnesiummalat",
+      "Magnesiumoxid"
+    ],
+    "preferred_form": "Magnesiumbisglycinat (beste Vertraeglichkeit) oder Magnesiumcitrat (beste Absorption)"
+  },
+  {
+    "name": "Vitamin D3 + K2",
+    "id": "vitamin_d3_k2",
+    "category": "vitamin_stoffwechsel",
+    "base_dose_mg": 1000,
+    "base_note": "1000 IE/Tag (Erhaltung) bis 2000 IE (Optimierung)",
+    "unit": "IE",
+    "max_daily_mg": 5000,
+    "genes": [
+      "VDR",
+      "GC"
+    ],
+    "gene_bonus_mg": 1000,
+    "cofactor": "Vitamin K2 (100 ug MK-7/Tag)",
+    "age_adjustments": [
+      {
+        "min": 70,
+        "factor": 1.3,
+        "reason": "Reduzierte Vitamin-D-Synthese in der Haut (>70)"
+      }
+    ],
+    "blood_markers": {
+      "vitamin d (25-oh)": {
+        "optimal": [
+          30,
+          60
+        ],
+        "low_dose_mult": 2.0,
+        "high_dose_mult": 0.5,
+        "adjustment": "25(OH)D <30 ng/ml -> Dosis erhoehen; >60 -> reduzieren"
+      }
+    },
+    "interactions": [
+      "Magnesium (fuer D3-Aktivierung noetig)",
+      "K2 (lenkt Calcium in Knochen)"
+    ],
+    "safety": "5000 IE/Tag Obergrenze ohne Arztkonsultation. Vitamin-D-Spiegel alle 3-6 Monate kontrollieren.",
+    "forms": [
+      "Vitamin D3 (Cholecalciferol)",
+      "Vitamin K2 MK-7 (Natto-frei)"
+    ],
+    "preferred_form": "D3 + K2 kombiniert in oeliger Loesung (Tropfen oder Weichkapseln)"
+  },
+  {
+    "name": "5-MTHF (aktives Folat)",
+    "id": "mthf",
+    "category": "methylierung",
+    "base_dose_mg": 200,
+    "base_note": "200 ug/Tag (Erhaltung), 400-800 ug bei MTHFR-Varianten",
+    "unit": "ug",
+    "max_daily_mg": 1000,
+    "genes": [
+      "MTHFR",
+      "MTR",
+      "MTRR",
+      "BHMT"
+    ],
+    "blood_markers": {
+      "homocystein": {
+        "optimal": [
+          5,
+          9
+        ],
+        "low_dose_mult": 1.5,
+        "adjustment": "Homocystein >9 -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Vitamin B12 (Methylcobalamin)",
+      "Betain/Cholin"
+    ],
+    "safety": "Hochstdosis 1000 ug/Tag. Nicht mit synthetischer Folsaure kombinieren (Maskierung von B12-Mangel).",
+    "forms": [
+      "5-Methyltetrahydrofolat (5-MTHF) als Calciumfolinat",
+      "Folinsaeure",
+      "Folsaure (synthetisch)"
+    ],
+    "preferred_form": "5-MTHF (Glucosaminfolat oder Calciumfolinat, bioidentisch)"
+  },
+  {
+    "name": "Vitamin B12 (Methylcobalamin)",
+    "id": "b12",
+    "category": "methylierung",
+    "base_dose_mg": 250,
+    "base_note": "250-500 ug/Tag Methylcobalamin",
+    "unit": "ug",
+    "max_daily_mg": 2000,
+    "genes": [
+      "MTR",
+      "MTRR",
+      "COMT"
+    ],
+    "gene_bonus_mg": 250,
+    "age_adjustments": [
+      {
+        "min": 65,
+        "factor": 1.5,
+        "reason": "Stark reduzierte B12-Resorption durch nachlassenden Intrinsic Factor (>65)"
+      }
+    ],
+    "blood_markers": {
+      "vitamin b12": {
+        "optimal": [
+          400,
+          900
+        ],
+        "low_dose_mult": 2.0,
+        "adjustment": "B12 <400 pg/ml -> Dosis verdoppeln"
+      }
+    },
+    "interactions": [
+      "5-MTHF",
+      "Kalium (bei B12-Auffuellung kontrollieren)"
+    ],
+    "safety": "Keine bekannte Toxizitaet. Hohe Dosen >1000 ug bei nachgewiesenem Mangel ueblich.",
+    "forms": [
+      "Methylcobalamin (aktiv, sublingual)",
+      "Hydroxocobalamin (Injektion)",
+      "Cyanocobalamin (synthetisch)"
+    ],
+    "preferred_form": "Methylcobalamin sublingual (beste Bioverfuegbarkeit, umgeht Magen-Darm-Trakt)"
+  },
+  {
+    "name": "Zink",
+    "id": "zink",
+    "category": "entgiftung",
+    "base_dose_mg": 10,
+    "base_note": "10-15 mg/Tag (RDA: 8-11 mg, UL: 40 mg)",
+    "unit": "mg",
+    "max_daily_mg": 40,
+    "genes": [
+      "SOD2",
+      "GSTP1",
+      "GPX1"
+    ],
+    "gene_bonus_mg": 5,
+    "blood_markers": {
+      "zink": {
+        "optimal": [
+          800,
+          1200
+        ],
+        "low_dose_mult": 1.3,
+        "adjustment": "Zink <800 ug/l -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Kupfer (Verhaeltnis Zink:Kupfer ~10:1)",
+      "Magnesium (kompetitive Aufnahme)"
+    ],
+    "safety": ">40 mg/Tag kann Kupfermangel verursachen. Maximal 6-8 Wochen hochdosieren.",
+    "forms": [
+      "Zinkpicolinat",
+      "Zinkbisglycinat",
+      "Zinkcitrat"
+    ],
+    "preferred_form": "Zinkpicolinat (beste Absorption, am wenigsten Magenbelastung)"
+  },
+  {
+    "name": "Selen",
+    "id": "selen",
+    "category": "entgiftung",
+    "base_dose_mg": 50,
+    "base_note": "50-100 ug/Tag (RDA: 55-70 ug, UL: 400 ug)",
+    "unit": "ug",
+    "max_daily_mg": 200,
+    "genes": [
+      "GPX1",
+      "SOD2"
+    ],
+    "gene_bonus_mg": 25,
+    "blood_markers": {
+      "selen": {
+        "optimal": [
+          80,
+          120
+        ],
+        "low_dose_mult": 1.3,
+        "adjustment": "Selen <80 ug/l -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Vitamin E (synergistisch)",
+      "Jod (Schilddruesenfunktion)"
+    ],
+    "safety": "Selenvergiftung >900 ug/Tag. Maximal 200 ug als Supplement.",
+    "forms": [
+      "Selenmethionin (L-Selenomethionin)",
+      "Natriumselenit"
+    ],
+    "preferred_form": "L-Selenomethionin (bessere Bioverfuegbarkeit als Natriumselenit)"
+  },
+  {
+    "name": "CoQ10 (Ubiquinol)",
+    "id": "coq10",
+    "category": "entgiftung",
+    "base_dose_mg": 100,
+    "base_note": "100 mg/Tag (bis 300 mg bei Statin-Einnahme)",
+    "unit": "mg",
+    "max_daily_mg": 300,
+    "genes": [
+      "NQO1",
+      "SOD2"
+    ],
+    "gene_bonus_mg": 50,
+    "age_adjustments": [
+      {
+        "min": 40,
+        "factor": 1.3,
+        "reason": "Koerpereigene CoQ10-Produktion sinkt ab 40"
+      },
+      {
+        "min": 60,
+        "factor": 1.5,
+        "reason": "CoQ10-Spiegel sinkt um 50% bis 70"
+      }
+    ],
+    "blood_markers": {
+      "coq10": {
+        "optimal": [
+          0.7,
+          1.5
+        ],
+        "low_dose_mult": 1.5,
+        "adjustment": "CoQ10 <0.7 mg/l -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Vitamin K2 (synergistisch)",
+      "Statine (erhoehen Bedarf)"
+    ],
+    "safety": "Gut vertraeglich. >300 mg nur nach Ruecksprache.",
+    "forms": [
+      "Ubiquinon (oxidierte Form/CoQ10)",
+      "Ubiquinol (reduzierte, teurere Form)"
+    ],
+    "preferred_form": "Ubiquinol (bei NQO1-Varianten oder ab 50 Jahren), sonst Ubiquinon ausreichend"
+  },
+  {
+    "name": "Curcumin (entzuendungshemmend)",
+    "id": "curcumin",
+    "category": "entzuendung",
+    "base_dose_mg": 500,
+    "base_note": "500 mg/Tag Curcumin mit Piperin fuer Bioverfuegbarkeit",
+    "unit": "mg",
+    "max_daily_mg": 1500,
+    "min_gene_risk": 0.5,
+    "genes": [
+      "TNF",
+      "IL6",
+      "NFKB1",
+      "PTGS2",
+      "IL1B"
+    ],
+    "gene_bonus_mg": 250,
+    "blood_markers": {
+      "crp": {
+        "optimal": [
+          0,
+          1
+        ],
+        "low_dose_mult": 1.3,
+        "adjustment": "CRP >1 mg/l -> Dosis erhoehen"
+      },
+      "hs-crp": {
+        "optimal": [
+          0,
+          1
+        ],
+        "low_dose_mult": 1.3,
+        "adjustment": "hs-CRP >1 mg/l -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Omega-3 (synergistisch entzuendungshemmend)",
+      "Piperin (erhoeht Bioverfuegbarkeit um 2000%)"
+    ],
+    "safety": "Kann mit Blutverduennern interagieren (CYP450). Bei Gallensteinen oder Gallengangsverschluss kontraindiziert.",
+    "forms": [
+      "Curcumin + Piperin (95% Curcuminoide)",
+      "Curcumin Phytosom (Meriva)",
+      "Theracurmin"
+    ],
+    "preferred_form": "Curcumin mit Piperin (kostenguenstig) oder Phytosom (bessere Bioverfuegbarkeit)"
+  },
+  {
+    "name": "NAC (N-Acetylcystein)",
+    "id": "nac",
+    "category": "entgiftung",
+    "base_dose_mg": 600,
+    "base_note": "600 mg/Tag NAC (max. 1200 mg ohne Rücksprache)",
+    "unit": "mg",
+    "max_daily_mg": 1200,
+    "min_gene_risk": 0.5,
+    "genes": [
+      "GSTP1",
+      "GPX1",
+      "NQO1",
+      "NFE2L2",
+      "SOD2"
+    ],
+    "gene_bonus_mg": 300,
+    "interactions": [
+      "Glutathion-Boost",
+      "Selen (fuer GPX-Aktivitaet noetig)"
+    ],
+    "safety": "Kann bei Asthmatikern Bronchospasmus ausloesen. >1200 mg/Tag nur nach Ruecksprache.",
+    "forms": [
+      "NAC Kapseln",
+      "NAC Brausetabletten",
+      "NAC Pulver"
+    ],
+    "preferred_form": "NAC mit Magnesium (stabilisiert das Molekuel, bessere Vertraeglichkeit)"
+  },
+  {
+    "name": "Betain/Cholin (TMG)",
+    "id": "betain",
+    "category": "methylierung",
+    "base_dose_mg": 500,
+    "base_note": "500 mg/Tag Betain (Trimethylglycin)",
+    "unit": "mg",
+    "max_daily_mg": 3000,
+    "min_gene_risk": 0.5,
+    "genes": [
+      "BHMT",
+      "PEMT",
+      "CHDH",
+      "CHKA"
+    ],
+    "gene_bonus_mg": 500,
+    "blood_markers": {
+      "homocystein": {
+        "optimal": [
+          5,
+          9
+        ],
+        "low_dose_mult": 1.3,
+        "adjustment": "Homocystein >9 -> Betain als Methylspender"
+      }
+    },
+    "interactions": [
+      "5-MTHF (synergistisch)",
+      "B12 (Methylcobalamin)"
+    ],
+    "safety": ">3000 mg/Tag kann Magen-Darm-Beschwerden verursachen. Bei Niereninsuffizienz voersichtig dosieren.",
+    "forms": [
+      "Betain-HCl",
+      "Betain-Anhydrat (TMG)",
+      "Cholinbitartrat"
+    ],
+    "preferred_form": "Betain-Anhydrat (TMG) fuer Methylierungs-Support"
+  },
+  {
+    "name": "Eisen (Ferritin)",
+    "id": "eisen",
+    "category": "entgiftung",
+    "base_dose_mg": 15,
+    "base_note": "15 mg/Tag Eisen (Frauen: RDA 18 mg, Maenner: 8 mg - nur bei Bedarf)",
+    "unit": "mg",
+    "max_daily_mg": 30,
+    "gender_factors": {
+      "w": 1.0,
+      "m": 0.0,
+      "d": 0.5
+    },
+    "genes": [
+      "HFE"
+    ],
+    "blood_markers": {
+      "ferritin": {
+        "optimal": [
+          50,
+          150
+        ],
+        "low_dose_mult": 1.5,
+        "high_dose_mult": 0.0,
+        "adjustment": "Ferritin <30 -> Dosis erhoehen; >150 -> absetzen"
+      },
+      "eisen": {
+        "optimal": [
+          60,
+          160
+        ],
+        "low_dose_mult": 1.3,
+        "high_dose_mult": 0.0,
+        "adjustment": "Eisen <60 -> erhoehen; >160 -> absetzen"
+      }
+    },
+    "interactions": [
+      "Vitamin C (erhoeht Resorption)",
+      "Calcium (hemmt Resorption, 2h Abstand)"
+    ],
+    "safety": "NICHT fuer Maenner ohne nachgewiesenen Mangel! HFE-Haemochromatose-Risiko beachten.",
+    "forms": [
+      "Eisenbisglycinat (Ferrochel)",
+      "Eisenfumarat",
+      "Eisensulfat"
+    ],
+    "preferred_form": "Eisenbisglycinat (beste Vertraeglichkeit, keine Verstopfung)"
+  },
+  {
+    "name": "Calcium (Citrat)",
+    "id": "calcium",
+    "category": "vitamin_stoffwechsel",
+    "base_dose_mg": 500,
+    "base_note": "500 mg/Tag (Frauen >50 + Maenner >71: 1200 mg empfohlen)",
+    "unit": "mg",
+    "max_daily_mg": 1000,
+    "min_gene_risk": 0.5,
+    "genes": [
+      "VDR",
+      "LRP5",
+      "COL1A1"
+    ],
+    "gene_bonus_mg": 250,
+    "age_adjustments": [
+      {
+        "min": 71,
+        "factor": 1.4,
+        "reason": "Calcium-Bedarf >71: 1200 mg (Knochendichte)"
+      },
+      {
+        "min": 50,
+        "factor": 1.2,
+        "reason": "Calcium-Bedarf >50: 1200 mg (postmenopausal)"
+      }
+    ],
+    "blood_markers": {
+      "calcium": {
+        "optimal": [
+          2.2,
+          2.6
+        ],
+        "low_dose_mult": 1.3,
+        "adjustment": "Calcium <2.2 -> Dosis erhoehen"
+      }
+    },
+    "interactions": [
+      "Vitamin D3 (noetig fuer Ca-Aufnahme)",
+      "Vitamin K2 (lenkt Ca in Knochen)"
+    ],
+    "safety": ">1000 mg Supplement + Ernaehrung kann Nierensteine foerdern.",
+    "forms": [
+      "Calciumcarbonat",
+      "Calciumcitrat",
+      "Calcium-Malat"
+    ],
+    "preferred_form": "Calciumcitrat (bessere Absorption, auch ohne Magensaeure)"
+  },
+  {
+    "name": "L-Arginin / L-Citrullin",
+    "id": "l_arginin",
+    "category": "herz_kreislauf",
+    "base_dose_mg": 2000,
+    "base_note": "2-3 g L-Arginin oder 1-2 g L-Citrullin. Citrullin wird im Koerper zu Arginin umgewandelt und wird besser vertragen.",
+    "unit": "mg",
+    "max_daily_mg": 6000,
+    "genes": [
+      "NOS3",
+      "NOS2"
+    ],
+    "min_gene_risk": 0.5,
+    "forms": [
+      "L-Arginin HCl",
+      "L-Citrullin (bessere Bioverfuegbarkeit)",
+      "Arginin-Alpha-Ketoglutarat"
+    ],
+    "preferred_form": "L-Citrullin (2x bessere NO-Wirkung als Arginin)",
+    "safety": "Nicht bei Herpes-Infektion (kann Reaktivierung foerdern). Vorsicht bei niedrigem Blutdruck."
+  },
+  {
+    "name": "NADH",
+    "id": "nadh",
+    "category": "herz_kreislauf",
+    "base_dose_mg": 20,
+    "base_note": "10-50 mg/Tag NADH (Coenzym 1) fuer mitochondriale Energieproduktion",
+    "unit": "mg",
+    "max_daily_mg": 100,
+    "genes": [
+      "NDUFS7",
+      "PPARG"
+    ],
+    "min_gene_risk": 0.3,
+    "forms": [
+      "NADH sublingual",
+      "NADH magensaftresistent",
+      "Nicotinamid-Ribosid (NR)"
+    ],
+    "preferred_form": "NADH sublingual (bessere Bioverfuegbarkeit umgeht Magensaeure)",
+    "safety": "Kann bei empfindlichen Personen Schlaflosigkeit verursachen. Morgens einnehmen."
+  },
+  {
+    "name": "Alpha-Liponsaeure (ALA)",
+    "id": "ala",
+    "category": "entgiftung",
+    "base_dose_mg": 300,
+    "base_note": "200-600 mg/Tag R-ALA (stabilisiert Glutathion, schuetzt Mitochondrien)",
+    "unit": "mg",
+    "max_daily_mg": 600,
+    "genes": [
+      "SOD2",
+      "NDUFS7",
+      "GPX1"
+    ],
+    "min_gene_risk": 0.3,
+    "forms": [
+      "R-ALA (reine R-Form, bioidentisch)",
+      "S-ALA (synthetisch)",
+      "ALA-Natrium-Salz (wasserloeslich)"
+    ],
+    "preferred_form": "R-ALA (biologisch aktive Form, 2-3x besser als S-ALA)",
+    "safety": "Kann Blutzucker senken. Vorsicht bei Diabetes-Medikation."
+  },
+  {
+    "name": "DAO (Diaminoxidase)",
+    "id": "dao",
+    "category": "entzuendung",
+    "base_dose_mg": 4.5,
+    "base_note": "4.5 mg DAO vor histaminreichen Mahlzeiten",
+    "unit": "mg",
+    "max_daily_mg": 9,
+    "genes": [
+      "DAO"
+    ],
+    "min_gene_risk": 0.5,
+    "forms": [
+      "DAO-Enzym aus Schweineniere",
+      "DAO-Kapseln magensaftresistent"
+    ],
+    "preferred_form": "DAO magensaftresistent (10-15 Min vor Mahlzeit)",
+    "safety": "Nicht als Dauertherapie gedacht. Histaminarme Ernaehrung priorisieren."
+  },
+  {
+    "name": "Vitamin A (Retinylpalmitat)",
+    "id": "vitamin_a",
+    "category": "vitamin_stoffwechsel",
+    "base_dose_mg": 0.8,
+    "base_note": "800 ug RE/Tag (RDA). Fuer Traeger von BCMO1/CYP26B1-Varianten besonders wichtig.",
+    "unit": "ug",
+    "max_daily_mg": 3,
+    "genes": [
+      "BCMO1",
+      "CYP26B1"
+    ],
+    "min_gene_risk": 0.4,
+    "forms": [
+      "Retinylpalmitat (tierisch)",
+      "Retinylacetat",
+      "Beta-Carotin (pflanzlich, Vorsicht bei BCMO1-Varianten)"
+    ],
+    "preferred_form": "Retinylpalmitat (direkt bioverfuegbar, kein Umwandlungsschritt noetig)",
+    "safety": "Nicht ueber 3000 ug/Tag ohne Arzt. NICHT in der Schwangerschaft erhoehen."
+  },
+  {
+    "name": "Probiotika (Bifidobakterien)",
+    "id": "probiotika",
+    "category": "sensitivitaet",
+    "base_dose_mg": 10,
+    "base_note": "10 Mrd. KBE/Tag Bifidobacterium (besonders B. longum, B. bifidum)",
+    "unit": "KBE(Mrd.)",
+    "max_daily_mg": 100,
+    "genes": [
+      "FUT2"
+    ],
+    "min_gene_risk": 0.3,
+    "forms": [
+      "Bifidobacterium longum",
+      "Bifidobacterium bifidum",
+      "Lactobacillus + Bifidobacterium-Kombi"
+    ],
+    "preferred_form": "Bifidobacterium longum + B. bifidum (FUT2-Traeger haben weniger Bifidus-Kolonisation)",
+    "safety": "Bei Immunsuppression und offenen Wunden nur nach Arzt-Ruecksprache."
+  }
+]

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Herrmann Nutrigenomik</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Plotly.js für Charts -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+</head>
+<body>
+  <div class="app-layout">
+    <!-- ── Sidebar ──────────────────────────────────────────── -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="#" class="sidebar-logo">
+          <span>🧬</span> Herrmann
+        </a>
+        <div class="sidebar-subtitle">Nutrigenomik</div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">Dashboard</div>
+          <button class="nav-item active" data-page="dashboard" id="nav-dashboard">
+            <span class="icon">📊</span><span>Übersicht</span>
+          </button>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Daten</div>
+          <button class="nav-item" data-page="dna" id="nav-dna">
+            <span class="icon">🧬</span><span>DNA-Analyse</span>
+          </button>
+          <button class="nav-item" data-page="blood" id="nav-blood">
+            <span class="icon">🩸</span><span>Blutwerte</span>
+          </button>
+          <button class="nav-item" data-page="medications" id="nav-medications">
+            <span class="icon">💊</span><span>Medikamente</span>
+          </button>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Ergebnisse</div>
+          <button class="nav-item" data-page="genome" id="nav-genome">
+            <span class="icon">🧬</span><span>Genomen</span>
+          </button>
+          <button class="nav-item" data-page="supplements" id="nav-supplements">
+            <span class="icon">💊</span><span>Supplemente</span>
+          </button>
+          <button class="nav-item" data-page="tolerance" id="nav-tolerance">
+            <span class="icon">💉</span><span>Verträglichkeit</span>
+          </button>
+        </div>
+        <div class="nav-section">
+          <div class="nav-section-title">Export</div>
+          <button class="nav-item" data-page="export" id="nav-export">
+            <span class="icon">📄</span><span>Report</span>
+          </button>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="status-dot offline" id="status-dot"></span>
+          <span id="status-text">Verbindung prüfen…</span>
+        </div>
+        <div>v2.0 · Standard-Style</div>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ─────────────────────────────────────── -->
+    <main class="main-content" id="main-content">
+      <header class="main-header">
+        <h1 id="page-title">Übersicht</h1>
+        <div class="header-actions" id="header-actions"></div>
+      </header>
+      <div class="main-body" id="main-body">
+        <!-- Dynamischer Content hier -->
+        <div class="empty-state" id="welcome-screen">
+          <div class="empty-state-icon">🧬</div>
+          <div class="empty-state-title">Herrmann Nutrigenomik</div>
+          <div class="empty-state-text">
+            Personalisierte Supplement-Empfehlungen aus Ihrer DNA, Blutwerten und Ihrem Profil.
+            Laden Sie Ihre DNA-Daten hoch und starten Sie die Analyse.
+          </div>
+          <button class="btn btn-primary" id="btn-start-analyze">
+            🧬 Analyse starten
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── Scripts: order matters ──────────────────────────────── -->
+  <script src="js/state.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
